@@ -1,20 +1,28 @@
+/**
+ * ============================================================================
+ * FitApp - React Native Entry Point
+ * ============================================================================
+ */
+
+import './global.css';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider } from '@/context/AuthContext';
+import { RootNavigator } from '@/navigation/RootNavigator';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <KeyboardProvider>
+        <NavigationContainer>
+          <AuthProvider>
+            <RootNavigator />
+            <StatusBar style="light" />
+          </AuthProvider>
+        </NavigationContainer>
+      </KeyboardProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
