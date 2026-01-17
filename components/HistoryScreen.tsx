@@ -1,35 +1,43 @@
-
 import React from 'react';
 import { GlassCard } from './GlassCard';
+import { Button } from './ui/Button';
+import { Heading, Text, Label } from './ui/Text';
 import { RECENT_LOGS } from '../constants';
+
+// ==========================================
+// HistoryScreen - Workout history and analytics
+// ==========================================
 
 export const HistoryScreen: React.FC = () => {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header */}
       <div className="flex items-center justify-between px-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight dark:text-white">History</h1>
-          <p className="text-primary/70 text-sm font-bold uppercase tracking-widest mt-1">Analytics Dashboard</p>
+          <Heading level={1}>History</Heading>
+          <Text variant="body-sm" accent uppercase className="tracking-widest mt-1">Analytics Dashboard</Text>
         </div>
-        <button className="w-12 h-12 rounded-2xl liquid-glass bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/10">
+        <Button variant="secondary" size="md">
           <span className="material-symbols-outlined text-primary">calendar_month</span>
-        </button>
+        </Button>
       </div>
 
-      <GlassCard className="p-6 border-t border-white/10 neo-glow-primary">
+      {/* Volume Chart Card */}
+      <GlassCard glow className="p-6 border-t border-white/10">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <span className="text-slate-400 dark:text-white/40 text-[10px] uppercase font-bold tracking-widest">Total Volume (KG)</span>
+            <Label>Total Volume (KG)</Label>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-4xl font-bold dark:text-white">142,500</span>
+              <Text variant="display" className="dark:text-white">142,500</Text>
               <span className="text-green-500 text-xs font-bold px-2 py-0.5 bg-green-500/10 rounded-full">+12%</span>
             </div>
           </div>
           <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-            <span className="text-primary text-[10px] font-bold">LAST 30 DAYS</span>
+            <Text variant="caption" accent className="normal-case">LAST 30 DAYS</Text>
           </div>
         </div>
-        
+
+        {/* Chart SVG */}
         <div className="h-32 w-full relative mt-4">
           <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 40">
             <defs>
@@ -43,24 +51,25 @@ export const HistoryScreen: React.FC = () => {
             <circle cx="100" cy="5" r="2" fill="#00c3ff" className="neo-glow"></circle>
           </svg>
         </div>
-        <div className="flex justify-between mt-4 text-[10px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-tighter">
-          <span>Oct 01</span>
-          <span>Oct 15</span>
-          <span>Oct 31</span>
+        <div className="flex justify-between mt-4">
+          <Label>Oct 01</Label>
+          <Label>Oct 15</Label>
+          <Label>Oct 31</Label>
         </div>
       </GlassCard>
 
+      {/* Calendar Card */}
       <GlassCard className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-lg dark:text-white">October 2023</h3>
+          <Heading level={3}>October 2023</Heading>
           <div className="flex gap-4 text-slate-400">
             <span className="material-symbols-outlined text-sm cursor-pointer">chevron_left</span>
             <span className="material-symbols-outlined text-sm cursor-pointer">chevron_right</span>
           </div>
         </div>
         <div className="grid grid-cols-7 gap-y-4 text-center">
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
-            <div key={day} className="text-[10px] text-slate-400 dark:text-white/30 font-bold uppercase">{day}</div>
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+            <Label key={`${day}-${i}`} className="block">{day}</Label>
           ))}
           <div className="text-sm text-slate-300 dark:text-white/20">28</div>
           <div className="text-sm text-slate-300 dark:text-white/20">29</div>
@@ -79,19 +88,20 @@ export const HistoryScreen: React.FC = () => {
         </div>
       </GlassCard>
 
+      {/* Recent Logs */}
       <div className="space-y-4">
-        <h3 className="text-slate-400 dark:text-white/50 text-xs font-bold uppercase tracking-[0.2em] px-2">Recent Logs</h3>
+        <Label className="px-2">Recent Logs</Label>
         {RECENT_LOGS.map(log => (
-          <GlassCard key={log.id} className="p-4 flex items-center justify-between border-l-4 border-l-primary">
+          <GlassCard key={log.id} accent="primary" className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary">{log.icon}</span>
               </div>
               <div>
-                <h4 className="font-bold text-lg leading-none dark:text-white">{log.name}</h4>
-                <p className="text-slate-400 dark:text-white/40 text-[10px] uppercase font-bold tracking-widest mt-1">
+                <Heading level={3} className="leading-none">{log.name}</Heading>
+                <Label className="mt-1">
                   {log.date} • {log.duration} • {log.volume}
-                </p>
+                </Label>
               </div>
             </div>
             <span className="material-symbols-outlined text-slate-300 dark:text-white/20">chevron_right</span>
