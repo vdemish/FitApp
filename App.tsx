@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Tab } from './types';
+import { useAuth } from './auth/AuthContext';
 import { WorkoutScreen } from './components/WorkoutScreen';
 import { LibraryScreen } from './components/LibraryScreen';
 import { HistoryScreen } from './components/HistoryScreen';
 import { ProfileScreen } from './components/ProfileScreen';
+import { LoginScreen } from './components/LoginScreen';
 import { Button } from './components/ui/Button';
 
 // ==========================================
 // App - Main application shell
-// Features: Tab navigation, Dark/Light mode
+// Features: Tab navigation, Dark/Light mode, Auth guard
 // ==========================================
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('workout');
   const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // --------------------------------------------------------------------------
+  // Аутентификация
+  // --------------------------------------------------------------------------
+  const { user, loading, signOut } = useAuth();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -22,6 +29,44 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  // --------------------------------------------------------------------------
+  // Состояние загрузки при проверке авторизации
+  // --------------------------------------------------------------------------
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 animate-pulse">
+            <span className="material-symbols-outlined text-4xl text-white dark:text-background-dark font-bold">
+              fitness_center
+            </span>
+          </div>
+          <span className="material-symbols-outlined text-4xl text-primary animate-spin">
+            progress_activity
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Показать экран входа если пользователь не авторизован
+  // --------------------------------------------------------------------------
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  // --------------------------------------------------------------------------
+  // Обработчик выхода
+  // --------------------------------------------------------------------------
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Ошибка выхода:', error);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -67,9 +112,21 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <Button variant="icon" size="sm" className="liquid-glass">
-              <span className="material-symbols-outlined">more_horiz</span>
-            </Button>
+            {/* Кнопка меню с выходом */}
+            <div className="flex gap-2">
+              <Button
+                variant="icon"
+                size="sm"
+                className="liquid-glass"
+                onClick={handleSignOut}
+                title="Выйти"
+              >
+                <span className="material-symbols-outlined">logout</span>
+              </Button>
+              <Button variant="icon" size="sm" className="liquid-glass">
+                <span className="material-symbols-outlined">more_horiz</span>
+              </Button>
+            </div>
           </div>
         </header>
 
