@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberFit Designer</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#00c3ff',
+                            dark: '#0099cc',
+                            light: '#4F46E5',
+                        },
+                        background: {
+                            dark: '#090b1b',
+                            light: '#F0F4FF',
+                        },
+                        accent: {
+                            purple: '#a855f7',
+                            pink: '#F472B6',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @layer base {
+            body {
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+        .liquid-glass {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 0px;
+            display: none;
+        }
+        .neo-glow {
+            box-shadow: 0 0 20px rgba(0, 195, 255, 0.2);
+        }
+        .dark .neo-glow-primary {
+            box-shadow: 0 0 25px rgba(0, 195, 255, 0.4);
+        }
+        .light .neo-glow-primary {
+            box-shadow: 0 0 25px rgba(79, 70, 229, 0.3);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-background-light dark:bg-background-dark transition-colors duration-500">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
