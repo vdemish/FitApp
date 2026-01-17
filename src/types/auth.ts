@@ -18,7 +18,9 @@ export interface UserProfile {
     full_name: string | null;
     avatar_url: string | null;
     subscription_tier: 'free' | 'premium';
-    current_weight: number | null;
+    current_weight_kg: number | null;
+    current_height_cm: number | null;
+    unit_preference: 'kg' | 'lbs';
     created_at: string;
     updated_at: string;
 }
