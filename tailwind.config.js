@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const { colors } = require('./src/theme/colors.cjs');
+
 module.exports = {
   darkMode: 'class',
   content: [
@@ -9,19 +11,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          DEFAULT: '#00c3ff',
-          dark: '#0099cc',
-          light: '#4F46E5',
-        },
-        background: {
-          dark: '#090b1b',
-          light: '#F0F4FF',
-        },
-        accent: {
-          purple: '#a855f7',
-          pink: '#F472B6',
-        },
+        // Import all colors from Single Source of Truth
+        primary: colors.primary,
+        background: colors.background,
+        surface: colors.surface,
+        accent: colors.accent,
+        success: colors.success,
+        error: colors.error,
+        border: colors.border,
+        // Flatten nested text colors for Tailwind utility classes
+        'text-primary': colors.text.primary,
+        'text-secondary': colors.text.secondary,
+        'text-muted': colors.text.muted,
       },
     },
   },
