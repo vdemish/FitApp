@@ -1,22 +1,24 @@
 /**
  * LoginScreen - Экран входа/регистрации
+ * Redesigned with glassmorphism design system
  */
 
 import React, { useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
     Pressable,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/AuthContext';
-import { colors, typography, spacing } from '@/theme';
+import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
+import { Text as UIText } from '@/components/ui/Text';
+import { colors, typography, spacing, radius } from '@/theme';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -50,104 +52,162 @@ export function LoginScreen() {
         : email.length > 0 && password.length >= 6 && fullName.length > 0;
 
     return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.keyboardView}
-            >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
+        <View style={styles.container}>
+            {/* Динамический фон с градиентными пятнами */}
+            <View style={styles.backgroundContainer}>
+                <View style={[styles.gradientBlob, styles.blobTopRight]} />
+                <View style={[styles.gradientBlob, styles.blobBottomLeft]} />
+            </View>
+
+            <SafeAreaView style={styles.safeArea}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.keyboardView}
                 >
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <View style={styles.logoContainer}>
-                            <Text style={styles.logoIcon}>⚡</Text>
-                        </View>
-                        <Text style={styles.title}>FitApp</Text>
-                        <Text style={styles.subtitle}>
-                            {mode === 'signIn' ? 'Войдите в аккаунт' : 'Создайте аккаунт'}
-                        </Text>
-                    </View>
-
-                    {/* Form */}
-                    <View style={styles.form}>
-                        {mode === 'signUp' && (
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.label}>Имя</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={fullName}
-                                    onChangeText={setFullName}
-                                    placeholder="Ваше имя"
-                                    placeholderTextColor={colors.text.muted.dark}
-                                    autoCapitalize="words"
-                                />
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Логотип и заголовок */}
+                        <View style={styles.header}>
+                            <View style={styles.logoContainer}>
+                                <Text style={styles.logoIcon}>⚡</Text>
                             </View>
-                        )}
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Email</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={email}
-                                onChangeText={setEmail}
-                                placeholder="your@email.com"
-                                placeholderTextColor={colors.text.muted.dark}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoComplete="email"
-                            />
+                            <Heading level={1}>
+                                Fit<Text style={styles.accentText}>App</Text>
+                            </Heading>
+                            <UIText variant="body-sm" muted style={styles.subtitle}>
+                                {mode === 'signIn' ? 'Войдите в свой аккаунт' : 'Создайте аккаунт для начала'}
+                            </UIText>
                         </View>
 
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Пароль</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={password}
-                                onChangeText={setPassword}
-                                placeholder="Минимум 6 символов"
-                                placeholderTextColor={colors.text.muted.dark}
-                                secureTextEntry
-                                autoCapitalize="none"
-                            />
-                        </View>
+                        {/* Форма */}
+                        <GlassCard style={styles.formCard}>
+                            <View style={styles.formContent}>
+                                {/* Поле имени (только при регистрации) */}
+                                {mode === 'signUp' && (
+                                    <View style={styles.inputGroup}>
+                                        <Label style={styles.inputLabel}>Ваше имя</Label>
+                                        <Input
+                                            icon="person"
+                                            placeholder="Александр Иванов"
+                                            value={fullName}
+                                            onChangeText={setFullName}
+                                            editable={!loading}
+                                            autoCapitalize="words"
+                                            testID="fullname-input"
+                                        />
+                                    </View>
+                                )}
 
-                        {error && (
-                            <View style={styles.errorContainer}>
-                                <Text style={styles.errorText}>{error}</Text>
+                                {/* Email */}
+                                <View style={styles.inputGroup}>
+                                    <Label style={styles.inputLabel}>Email</Label>
+                                    <Input
+                                        icon="mail"
+                                        placeholder="your@email.com"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        editable={!loading}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoComplete="email"
+                                        testID="email-input"
+                                    />
+                                </View>
+
+                                {/* Пароль */}
+                                <View style={styles.inputGroup}>
+                                    <Label style={styles.inputLabel}>Пароль</Label>
+                                    <Input
+                                        icon="lock"
+                                        placeholder="Минимум 6 символов"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        editable={!loading}
+                                        secureTextEntry
+                                        autoCapitalize="none"
+                                        testID="password-input"
+                                    />
+                                </View>
+
+                                {/* Ошибка */}
+                                {error && (
+                                    <View style={styles.errorContainer}>
+                                        <UIText variant="body-sm" style={styles.errorText}>
+                                            {error}
+                                        </UIText>
+                                    </View>
+                                )}
+
+                                {/* Кнопка отправки */}
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    fullWidth
+                                    glow
+                                    disabled={!isValid}
+                                    loading={loading}
+                                    onPress={handleSubmit}
+                                    testID="submit-button"
+                                >
+                                    {mode === 'signIn' ? 'Войти' : 'Создать аккаунт'}
+                                </Button>
+
+                                {/* Разделитель */}
+                                <View style={styles.divider}>
+                                    <View style={styles.dividerLine} />
+                                    <UIText variant="caption" muted>ИЛИ</UIText>
+                                    <View style={styles.dividerLine} />
+                                </View>
+
+                                {/* OAuth кнопки */}
+                                <View style={styles.oauthButtons}>
+                                    <Button
+                                        variant="secondary"
+                                        size="lg"
+                                        fullWidth
+                                        onPress={() => { }}
+                                        testID="google-button"
+                                    >
+                                        <Text style={styles.oauthIcon}>G</Text>
+                                        <Text style={styles.oauthText}>Продолжить с Google</Text>
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="lg"
+                                        fullWidth
+                                        onPress={() => { }}
+                                        testID="apple-button"
+                                    >
+                                        <Text style={styles.oauthIcon}></Text>
+                                        <Text style={styles.oauthText}>Продолжить с Apple</Text>
+                                    </Button>
+                                </View>
+
+                                {/* Переключение режима */}
+                                <View style={styles.modeToggle}>
+                                    <UIText variant="body-sm" muted>
+                                        {mode === 'signIn' ? 'Ещё нет аккаунта?' : 'Уже есть аккаунт?'}
+                                    </UIText>
+                                    <Pressable onPress={toggleMode} disabled={loading}>
+                                        <Text style={styles.modeToggleLink}>
+                                            {mode === 'signIn' ? 'Создать' : 'Войти'}
+                                        </Text>
+                                    </Pressable>
+                                </View>
                             </View>
-                        )}
+                        </GlassCard>
 
-                        <Pressable
-                            style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
-                            onPress={handleSubmit}
-                            disabled={!isValid || loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color={colors.background.dark} />
-                            ) : (
-                                <Text style={styles.submitButtonText}>
-                                    {mode === 'signIn' ? 'Войти' : 'Зарегистрироваться'}
-                                </Text>
-                            )}
-                        </Pressable>
-                    </View>
-
-                    {/* Toggle Mode */}
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>
-                            {mode === 'signIn' ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
-                        </Text>
-                        <Pressable onPress={toggleMode}>
-                            <Text style={styles.footerLink}>
-                                {mode === 'signIn' ? 'Зарегистрироваться' : 'Войти'}
-                            </Text>
-                        </Pressable>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                        {/* Подвал */}
+                        <UIText variant="caption" muted style={styles.footer}>
+                            Продолжая, вы соглашаетесь с условиями использования
+                        </UIText>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </View>
     );
 }
 
@@ -155,6 +215,29 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background.dark,
+    },
+    backgroundContainer: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: 'hidden',
+    },
+    gradientBlob: {
+        position: 'absolute',
+        width: 500,
+        height: 500,
+        borderRadius: 250,
+    },
+    blobTopRight: {
+        top: -100,
+        right: -100,
+        backgroundColor: `${colors.primary.DEFAULT}0D`, // 5% opacity
+    },
+    blobBottomLeft: {
+        bottom: -100,
+        left: -100,
+        backgroundColor: `${colors.accent.purple}0D`, // 5% opacity
+    },
+    safeArea: {
+        flex: 1,
     },
     keyboardView: {
         flex: 1,
@@ -170,94 +253,96 @@ const styles = StyleSheet.create({
         marginBottom: spacing['2xl'],
     },
     logoContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
+        width: 80,
+        height: 80,
+        borderRadius: radius.xl,
         backgroundColor: colors.primary.DEFAULT,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: spacing.md,
-        shadowColor: colors.primary.DEFAULT,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 25,
-        elevation: 10,
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.primary.DEFAULT,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.5,
+                shadowRadius: 25,
+            },
+            android: {
+                elevation: 15,
+            },
+        }),
     },
     logoIcon: {
-        fontSize: 32,
+        fontSize: 40,
     },
-    title: {
-        fontSize: typography.fontSize.h1,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.text.primary.dark,
-        marginBottom: spacing.xs,
+    accentText: {
+        color: colors.primary.DEFAULT,
     },
     subtitle: {
-        fontSize: typography.fontSize.body,
-        color: colors.text.secondary.dark,
+        marginTop: spacing.sm,
     },
-    form: {
-        marginBottom: spacing.xl,
+    formCard: {
+        marginBottom: spacing.lg,
     },
-    inputContainer: {
+    formContent: {
+        padding: spacing.lg,
+    },
+    inputGroup: {
         marginBottom: spacing.md,
     },
-    label: {
-        fontSize: typography.fontSize.bodySm,
-        fontWeight: typography.fontWeight.medium,
-        color: colors.text.secondary.dark,
+    inputLabel: {
         marginBottom: spacing.xs,
-    },
-    input: {
-        height: 48,
-        backgroundColor: colors.surface.dark,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.border.dark,
-        paddingHorizontal: spacing.md,
-        fontSize: typography.fontSize.body,
-        color: colors.text.primary.dark,
+        marginLeft: 4,
     },
     errorContainer: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderRadius: 8,
+        backgroundColor: `${colors.error}1A`, // 10% opacity
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: `${colors.error}33`, // 20% opacity
         padding: spacing.sm,
         marginBottom: spacing.md,
     },
     errorText: {
-        fontSize: typography.fontSize.bodySm,
-        color: '#ef4444',
+        color: colors.error,
         textAlign: 'center',
     },
-    submitButton: {
-        height: 52,
-        backgroundColor: colors.primary.DEFAULT,
-        borderRadius: 16,
-        justifyContent: 'center',
+    divider: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginTop: spacing.sm,
+        gap: spacing.md,
+        marginVertical: spacing.lg,
     },
-    submitButtonDisabled: {
-        opacity: 0.5,
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: colors.border.dark,
     },
-    submitButtonText: {
-        fontSize: typography.fontSize.body,
+    oauthButtons: {
+        gap: spacing.sm,
+    },
+    oauthIcon: {
+        fontSize: 18,
+        marginRight: spacing.sm,
+        color: colors.text.primary.dark,
+    },
+    oauthText: {
+        fontSize: typography.fontSize.bodySm,
         fontWeight: typography.fontWeight.bold,
-        color: colors.background.dark,
+        color: colors.text.secondary.dark,
     },
-    footer: {
+    modeToggle: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: spacing.xs,
+        marginTop: spacing.lg,
     },
-    footerText: {
+    modeToggleLink: {
         fontSize: typography.fontSize.bodySm,
-        color: colors.text.muted.dark,
-    },
-    footerLink: {
-        fontSize: typography.fontSize.bodySm,
-        fontWeight: typography.fontWeight.semibold,
+        fontWeight: typography.fontWeight.bold,
         color: colors.primary.DEFAULT,
+    },
+    footer: {
+        textAlign: 'center',
     },
 });

@@ -1,12 +1,15 @@
 /**
- * ProfileScreen - Профиль пользователя
+ * ProfileScreen - Профиль пользователя и настройки
+ * Redesigned with glassmorphism design system
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
-import { colors, typography, spacing } from '@/theme';
+import { GlassCard, Button, Heading, Label } from '@/components/ui';
+import { Text as UIText } from '@/components/ui/Text';
+import { colors, typography, spacing, radius } from '@/theme';
 
 export function ProfileScreen() {
     const { user, profile, signOut } = useAuth();
@@ -19,34 +22,170 @@ export function ProfileScreen() {
         }
     };
 
+    // Получаем инициалы для аватара
+    const getInitials = () => {
+        if (profile?.full_name) {
+            return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+        }
+        return user?.email?.[0]?.toUpperCase() || '?';
+    };
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Profile</Text>
-            </View>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Profile Header Card */}
+                <GlassCard glow style={styles.profileCard}>
+                    {/* Декоративный блюр */}
+                    <View style={styles.decorativeBlob} />
 
-            <View style={styles.content}>
-                <View style={styles.profileCard}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'}
-                        </Text>
+                    <View style={styles.profileHeader}>
+                        {/* Avatar */}
+                        <View style={styles.avatarContainer}>
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>{getInitials()}</Text>
+                            </View>
+                            <View style={styles.editBadge}>
+                                <Text style={styles.editIcon}>✏️</Text>
+                            </View>
+                        </View>
+
+                        {/* Name & Status */}
+                        <View style={styles.profileInfo}>
+                            <Heading level={2}>{profile?.full_name || 'Пользователь'}</Heading>
+                            <UIText variant="body-sm" accent uppercase style={styles.memberStatus}>
+                                Premium Member
+                            </UIText>
+                        </View>
                     </View>
 
-                    <Text style={styles.name}>
-                        {profile?.full_name || 'Пользователь'}
-                    </Text>
-                    <Text style={styles.email}>{user?.email}</Text>
+                    {/* Stats Row */}
+                    <View style={styles.statsRow}>
+                        <View style={styles.statItem}>
+                            <UIText variant="display" style={styles.statValue}>142</UIText>
+                            <Label>Workouts</Label>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <UIText variant="display" accent style={styles.statValue}>84.5</UIText>
+                            <Label>Weight (kg)</Label>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <UIText variant="display" style={styles.statValue}>12</UIText>
+                            <Label>Week Streak</Label>
+                        </View>
+                    </View>
+                </GlassCard>
 
-                    <Pressable
-                        style={styles.signOutButton}
-                        onPress={handleSignOut}
-                    >
-                        <Text style={styles.signOutText}>Выйти</Text>
-                    </Pressable>
+                {/* Account Settings Section */}
+                <View style={styles.section}>
+                    <Label style={styles.sectionLabel}>Account Settings</Label>
+                    <GlassCard style={styles.settingsCard}>
+                        <SettingsRow
+                            icon="👤"
+                            label="Personal Information"
+                            onPress={() => console.log('Personal Info')}
+                        />
+                        <View style={styles.settingsDivider} />
+                        <SettingsRow
+                            icon="📊"
+                            label="Training Metrics"
+                            onPress={() => console.log('Training Metrics')}
+                        />
+                        <View style={styles.settingsDivider} />
+                        <SettingsRow
+                            icon="🔔"
+                            label="Reminders & Notifications"
+                            onPress={() => console.log('Notifications')}
+                        />
+                    </GlassCard>
                 </View>
-            </View>
+
+                {/* App Preferences Section */}
+                <View style={styles.section}>
+                    <Label style={styles.sectionLabel}>App Preferences</Label>
+                    <GlassCard style={styles.settingsCard}>
+                        <View style={styles.settingsRow}>
+                            <View style={styles.settingsRowLeft}>
+                                <Text style={styles.settingsIcon}>⏱</Text>
+                                <UIText style={styles.settingsLabel}>Rest Timer Sounds</UIText>
+                            </View>
+                            <Switch
+                                value={true}
+                                onValueChange={() => { }}
+                                trackColor={{
+                                    false: colors.surface.dark,
+                                    true: colors.primary.DEFAULT,
+                                }}
+                                thumbColor={colors.text.primary.dark}
+                            />
+                        </View>
+                        <View style={styles.settingsDivider} />
+                        <SettingsRow
+                            icon="⚖️"
+                            label="Units (kg, cm)"
+                            value="Metric"
+                            onPress={() => console.log('Units')}
+                        />
+                    </GlassCard>
+                </View>
+
+                {/* Sign Out Button */}
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.signOutButton,
+                        pressed && styles.signOutButtonPressed,
+                    ]}
+                    onPress={handleSignOut}
+                    testID="sign-out-button"
+                >
+                    <Text style={styles.signOutText}>Выйти из аккаунта</Text>
+                </Pressable>
+
+                {/* Version Info */}
+                <Label style={styles.versionInfo}>Version 2.4.0 (Build 982)</Label>
+            </ScrollView>
         </SafeAreaView>
+    );
+}
+
+// ==========================================
+// SettingsRow Component
+// ==========================================
+
+interface SettingsRowProps {
+    icon: string;
+    label: string;
+    value?: string;
+    onPress?: () => void;
+}
+
+function SettingsRow({ icon, label, value, onPress }: SettingsRowProps) {
+    return (
+        <Pressable
+            style={({ pressed }) => [
+                styles.settingsRow,
+                pressed && styles.settingsRowPressed,
+            ]}
+            onPress={onPress}
+        >
+            <View style={styles.settingsRowLeft}>
+                <Text style={styles.settingsIcon}>{icon}</Text>
+                <UIText style={styles.settingsLabel}>{label}</UIText>
+            </View>
+            <View style={styles.settingsRowRight}>
+                {value && (
+                    <UIText variant="body-sm" accent style={styles.settingsValue}>
+                        {value}
+                    </UIText>
+                )}
+                <Text style={styles.chevron}>›</Text>
+            </View>
+        </Pressable>
     );
 }
 
@@ -55,67 +194,184 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background.dark,
     },
-    header: {
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.lg,
-    },
-    title: {
-        fontSize: typography.fontSize.h1,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.text.primary.dark,
-    },
-    content: {
+    scrollView: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: spacing.md,
     },
+    scrollContent: {
+        padding: spacing.md,
+        paddingBottom: 100,
+        gap: spacing.lg,
+    },
+
+    // Profile Card
     profileCard: {
+        padding: spacing.lg,
+        overflow: 'hidden',
+    },
+    decorativeBlob: {
+        position: 'absolute',
+        top: -40,
+        right: -40,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: `${colors.primary.DEFAULT}1A`,
+    },
+    profileHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.xl,
-        backgroundColor: colors.surface.dark,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: colors.border.dark,
-        width: '100%',
-        maxWidth: 320,
+        gap: spacing.lg,
+    },
+    avatarContainer: {
+        position: 'relative',
     },
     avatar: {
         width: 80,
         height: 80,
-        borderRadius: 40,
+        borderRadius: radius.xl,
         backgroundColor: colors.primary.DEFAULT,
-        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: spacing.md,
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: `${colors.primary.DEFAULT}80`,
     },
     avatarText: {
         fontSize: typography.fontSize.h1,
         fontWeight: typography.fontWeight.bold,
         color: colors.background.dark,
     },
-    name: {
-        fontSize: typography.fontSize.h3,
-        fontWeight: typography.fontWeight.semibold,
+    editBadge: {
+        position: 'absolute',
+        bottom: -4,
+        right: -4,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.primary.DEFAULT,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.background.dark,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
+    },
+    editIcon: {
+        fontSize: 12,
+    },
+    profileInfo: {
+        flex: 1,
+    },
+    memberStatus: {
+        marginTop: 4,
+        letterSpacing: 2,
+    },
+
+    // Stats Row
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: spacing.xl,
+        paddingTop: spacing.lg,
+        borderTopWidth: 1,
+        borderTopColor: colors.border.dark,
+    },
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: typography.fontSize.h2,
         color: colors.text.primary.dark,
-        marginBottom: spacing.xs,
     },
-    email: {
-        fontSize: typography.fontSize.bodySm,
+    statDivider: {
+        width: 1,
+        height: 40,
+        backgroundColor: colors.border.dark,
+    },
+
+    // Sections
+    section: {
+        gap: spacing.sm,
+    },
+    sectionLabel: {
+        marginLeft: spacing.xs,
+    },
+
+    // Settings Card
+    settingsCard: {
+        overflow: 'hidden',
+    },
+    settingsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: spacing.lg,
+    },
+    settingsRowPressed: {
+        backgroundColor: colors.surface.dark,
+    },
+    settingsRowLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
+    settingsRowRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    settingsIcon: {
+        fontSize: 20,
+    },
+    settingsLabel: {
+        color: colors.text.primary.dark,
+        fontWeight: typography.fontWeight.medium,
+    },
+    settingsValue: {
+        fontWeight: typography.fontWeight.bold,
+    },
+    settingsDivider: {
+        height: 1,
+        backgroundColor: colors.border.dark,
+        marginHorizontal: spacing.lg,
+    },
+    chevron: {
+        fontSize: 20,
         color: colors.text.muted.dark,
-        marginBottom: spacing.lg,
     },
+
+    // Sign Out
     signOutButton: {
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
-        borderRadius: 12,
+        backgroundColor: `${colors.error}1A`,
+        borderRadius: radius.lg,
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.3)',
+        borderColor: `${colors.error}33`,
+        padding: spacing.md,
+        alignItems: 'center',
+        marginTop: spacing.md,
+    },
+    signOutButtonPressed: {
+        backgroundColor: `${colors.error}33`,
     },
     signOutText: {
-        fontSize: typography.fontSize.bodySm,
+        fontSize: typography.fontSize.body,
         fontWeight: typography.fontWeight.semibold,
-        color: '#ef4444',
+        color: colors.error,
+    },
+
+    // Version
+    versionInfo: {
+        textAlign: 'center',
+        marginTop: spacing.md,
     },
 });
