@@ -1,41 +1,30 @@
 /**
  * LibraryScreen - Библиотека упражнений
- * Redesigned with glassmorphism design system
+ * Connected to real database via useExercises hook
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components';
+import { useExercises } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
-
-// Моковые данные упражнений (позже будут из базы)
-const EXERCISES = [
-    { id: '1', name: 'Bench Press', category: 'Chest', type: 'Barbell', icon: '🏋️' },
-    { id: '2', name: 'Incline Dumbbell Press', category: 'Chest', type: 'Dumbbell', icon: '💪' },
-    { id: '3', name: 'Pull-ups', category: 'Back', type: 'Bodyweight', icon: '🔝' },
-    { id: '4', name: 'Deadlift', category: 'Back', type: 'Barbell', icon: '⬆️' },
-    { id: '5', name: 'Squats', category: 'Legs', type: 'Barbell', icon: '🦵' },
-    { id: '6', name: 'Leg Press', category: 'Legs', type: 'Machine', icon: '🦿' },
-    { id: '7', name: 'Shoulder Press', category: 'Shoulders', type: 'Dumbbell', icon: '🎯' },
-    { id: '8', name: 'Lateral Raises', category: 'Shoulders', type: 'Dumbbell', icon: '↔️' },
-];
-
-const CATEGORIES = ['All', 'Chest', 'Back', 'Legs', 'Shoulders'];
+import type { Exercise, MuscleGroup } from '@/types';
 
 export function LibraryScreen() {
+    const { exercises, muscleGroups, loading, error } = useExercises();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
 
     // Фильтрация упражнений
     const filteredExercises = useMemo(() => {
-        let result = EXERCISES;
+        let result = exercises;
 
-        // Фильтр по категории
-        if (selectedCategory !== 'All') {
-            result = result.filter(e => e.category === selectedCategory);
+        // Фильтр по группе мышц
+        if (selectedMuscleGroupId) {
+            result = result.filter(e => e.muscle_group_id === selectedMuscleGroupId);
         }
 
         // Фильтр по поиску
@@ -43,34 +32,69 @@ export function LibraryScreen() {
             const query = searchQuery.toLowerCase();
             result = result.filter(e =>
                 e.name.toLowerCase().includes(query) ||
-                e.category.toLowerCase().includes(query)
+                e.muscle_group?.name.toLowerCase().includes(query)
             );
         }
 
         return result;
-    }, [searchQuery, selectedCategory]);
+    }, [exercises, searchQuery, selectedMuscleGroupId]);
 
     // Часто используемые (первые 2)
     const commonlyUsed = filteredExercises.slice(0, 2);
 
-    const renderExerciseCard = (exercise: typeof EXERCISES[0], highlighted = false) => (
+    const renderExerciseCard = (exercise: Exercise, highlighted = false) => (
         <GlassCard
             key={exercise.id}
             style={styles.exerciseCard}
             onPress={() => console.log('Selected:', exercise.name)}
         >
             <View style={[styles.exerciseIcon, highlighted && styles.exerciseIconHighlighted]}>
-                <Text style={styles.exerciseEmoji}>{exercise.icon}</Text>
+                <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
             </View>
             <View style={styles.exerciseInfo}>
                 <Heading level={3}>{exercise.name}</Heading>
                 <UIText variant="body-sm" muted>
-                    {exercise.category} • {exercise.type}
+                    {exercise.muscle_group?.name || 'Unknown'} • {exercise.exercise_type}
                 </UIText>
             </View>
             <Text style={styles.chevron}>›</Text>
         </GlassCard>
     );
+
+    // Простой маппинг иконок в emoji
+    const getExerciseEmoji = (icon: string): string => {
+        const iconMap: Record<string, string> = {
+            fitness_center: '🏋️',
+            sports_gymnastics: '💪',
+            accessibility_new: '🧘',
+            directions_run: '🏃',
+        };
+        return iconMap[icon] || '🏋️';
+    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container} edges={['top']}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+                    <UIText variant="body-sm" muted style={styles.loadingText}>
+                        Загрузка упражнений...
+                    </UIText>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={styles.container} edges={['top']}>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorEmoji}>⚠️</Text>
+                    <UIText variant="body" muted>{error}</UIText>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -114,13 +138,19 @@ export function LibraryScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.categoryPills}
                 >
-                    {CATEGORIES.map(category => (
+                    <CategoryPill
+                        label="All"
+                        active={selectedMuscleGroupId === null}
+                        onPress={() => setSelectedMuscleGroupId(null)}
+                        testID="category-all"
+                    />
+                    {muscleGroups.map(group => (
                         <CategoryPill
-                            key={category}
-                            label={category}
-                            active={selectedCategory === category}
-                            onPress={() => setSelectedCategory(category)}
-                            testID={`category-${category.toLowerCase()}`}
+                            key={group.id}
+                            label={group.name}
+                            active={selectedMuscleGroupId === group.id}
+                            onPress={() => setSelectedMuscleGroupId(group.id)}
+                            testID={`category-${group.name.toLowerCase().replace(/\s/g, '-')}`}
                         />
                     ))}
                 </ScrollView>
@@ -137,7 +167,7 @@ export function LibraryScreen() {
 
                 {/* A-Z Section */}
                 <View style={styles.section}>
-                    <Label style={styles.sectionLabel}>A-Z</Label>
+                    <Label style={styles.sectionLabel}>A-Z ({filteredExercises.length})</Label>
                     <View style={styles.exerciseList}>
                         {filteredExercises.map(ex => renderExerciseCard(ex, false))}
                     </View>
@@ -165,7 +195,25 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: spacing.md,
-        paddingBottom: 100, // Space for tab bar
+        paddingBottom: 100,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: spacing.md,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+    },
+    errorEmoji: {
+        fontSize: 48,
+        marginBottom: spacing.md,
     },
 
     // Header

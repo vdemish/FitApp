@@ -74,19 +74,19 @@ export function Button({
         styles.base,
         styles[variant],
         isIcon
-            ? { width: sizeConfig.size, height: sizeConfig.size, borderRadius: sizeConfig.borderRadius }
-            : { height: sizeConfig.height, paddingHorizontal: sizeConfig.paddingHorizontal, borderRadius: sizeConfig.borderRadius },
-        fullWidth && styles.fullWidth,
-        glow && variant === 'primary' && styles.glow,
-        disabled && styles.disabled,
-        style,
+            ? { width: (sizeConfig as typeof iconSizeStyles.md).size, height: (sizeConfig as typeof iconSizeStyles.md).size, borderRadius: sizeConfig.borderRadius }
+            : { height: (sizeConfig as typeof sizeStyles.md).height, paddingHorizontal: (sizeConfig as typeof sizeStyles.md).paddingHorizontal, borderRadius: sizeConfig.borderRadius },
+        fullWidth ? styles.fullWidth : {},
+        glow && variant === 'primary' ? styles.glow : {},
+        disabled ? styles.disabled : {},
+        style || {},
     ];
 
     // Стили текста
     const textStyles: TextStyle[] = [
         styles.text,
         styles[`${variant}Text` as keyof typeof styles] as TextStyle,
-        !isIcon && { fontSize: sizeConfig.fontSize },
+        !isIcon ? { fontSize: (sizeConfig as typeof sizeStyles.md).fontSize } : {},
     ].filter(Boolean) as TextStyle[];
 
     return (

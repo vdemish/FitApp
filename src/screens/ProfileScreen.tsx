@@ -1,18 +1,20 @@
 /**
  * ProfileScreen - Профиль пользователя и настройки
- * Redesigned with glassmorphism design system
+ * Connected to real database via useUserStats and AuthContext
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
+import { useUserStats } from '@/hooks';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
 
 export function ProfileScreen() {
     const { user, profile, signOut } = useAuth();
+    const { stats, loading } = useUserStats();
 
     const handleSignOut = async () => {
         try {
@@ -28,6 +30,12 @@ export function ProfileScreen() {
             return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
         }
         return user?.email?.[0]?.toUpperCase() || '?';
+    };
+
+    // Форматирование веса
+    const formatWeight = (weight: number | null | undefined): string => {
+        if (!weight) return '--';
+        return weight.toFixed(1);
     };
 
     return (
@@ -64,20 +72,32 @@ export function ProfileScreen() {
 
                     {/* Stats Row */}
                     <View style={styles.statsRow}>
-                        <View style={styles.statItem}>
-                            <UIText variant="display" style={styles.statValue}>142</UIText>
-                            <Label>Workouts</Label>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.statItem}>
-                            <UIText variant="display" accent style={styles.statValue}>84.5</UIText>
-                            <Label>Weight (kg)</Label>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.statItem}>
-                            <UIText variant="display" style={styles.statValue}>12</UIText>
-                            <Label>Week Streak</Label>
-                        </View>
+                        {loading ? (
+                            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+                        ) : (
+                            <>
+                                <View style={styles.statItem}>
+                                    <UIText variant="display" style={styles.statValue}>
+                                        {stats?.totalWorkouts || 0}
+                                    </UIText>
+                                    <Label>Workouts</Label>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <UIText variant="display" accent style={styles.statValue}>
+                                        {formatWeight(stats?.currentWeight)}
+                                    </UIText>
+                                    <Label>Weight (kg)</Label>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <UIText variant="display" style={styles.statValue}>
+                                        {stats?.weekStreak || 0}
+                                    </UIText>
+                                    <Label>Week Streak</Label>
+                                </View>
+                            </>
+                        )}
                     </View>
                 </GlassCard>
 

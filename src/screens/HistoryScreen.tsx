@@ -1,31 +1,85 @@
 /**
  * HistoryScreen - История тренировок и аналитика
- * Redesigned with glassmorphism design system
+ * Connected to real database via useWorkoutHistory and useUserStats hooks
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
+import { useWorkoutHistory, useUserStats } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
-
-// Моковые данные логов (позже будут из базы)
-const RECENT_LOGS = [
-    { id: '1', name: 'Push Day A', date: 'Oct 03', duration: '58m', volume: '4,200kg', icon: '💪' },
-    { id: '2', name: 'Pull Day B', date: 'Oct 01', duration: '52m', volume: '3,800kg', icon: '🔙' },
-    { id: '3', name: 'Leg Day', date: 'Sep 29', duration: '65m', volume: '5,100kg', icon: '🦵' },
-];
+import type { Workout } from '@/types';
 
 const WEEK_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-const CALENDAR_DAYS = [28, 29, 30, 1, 2, 3, 4];
-const WORKOUT_DAYS = [1, 3]; // дни с тренировками
-
-const { width: screenWidth } = Dimensions.get('window');
-
 export function HistoryScreen() {
-    const [currentMonth] = useState('October 2023');
+    const { workouts, loading: historyLoading } = useWorkoutHistory(10);
+    const { stats, totalVolume, volumeData, loading: statsLoading } = useUserStats(30);
+
+    const loading = historyLoading || statsLoading;
+
+    // Форматирование даты
+    const formatDate = (dateString: string | null): string => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+    };
+
+    // Форматирование длительности
+    const formatDuration = (seconds: number | null): string => {
+        if (!seconds) return '0m';
+        const minutes = Math.floor(seconds / 60);
+        return `${minutes}m`;
+    };
+
+    // Форматирование объёма
+    const formatVolume = (volume: number | null): string => {
+        if (!volume) return '0kg';
+        if (volume >= 1000) {
+            return `${(volume / 1000).toFixed(1)}k kg`;
+        }
+        return `${Math.round(volume)}kg`;
+    };
+
+    // Генерация календаря (текущая неделя)
+    const getCalendarDays = (): { day: number; hasWorkout: boolean; isToday: boolean }[] => {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+
+        const workoutDates = new Set(
+            workouts.map(w => w.completed_at?.split('T')[0])
+        );
+
+        return Array.from({ length: 7 }, (_, i) => {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            const dateKey = date.toISOString().split('T')[0];
+            return {
+                day: date.getDate(),
+                hasWorkout: workoutDates.has(dateKey),
+                isToday: dateKey === today.toISOString().split('T')[0],
+            };
+        });
+    };
+
+    const calendarDays = getCalendarDays();
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container} edges={['top']}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+                    <UIText variant="body-sm" muted style={styles.loadingText}>
+                        Загрузка истории...
+                    </UIText>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -53,10 +107,14 @@ export function HistoryScreen() {
                         <View>
                             <Label>Total Volume (KG)</Label>
                             <View style={styles.volumeRow}>
-                                <UIText variant="display" style={styles.volumeValue}>142,500</UIText>
-                                <View style={styles.percentBadge}>
-                                    <Text style={styles.percentText}>+12%</Text>
-                                </View>
+                                <UIText variant="display" style={styles.volumeValue}>
+                                    {formatVolume(totalVolume).replace(' kg', '')}
+                                </UIText>
+                                {volumeData.length > 1 && (
+                                    <View style={styles.percentBadge}>
+                                        <Text style={styles.percentText}>Last 30 days</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                         <View style={styles.periodBadge}>
@@ -67,31 +125,34 @@ export function HistoryScreen() {
                     {/* Simple Chart Visualization */}
                     <View style={styles.chartContainer}>
                         <View style={styles.chartLine}>
-                            {[35, 32, 25, 28, 15, 10, 5].map((height, index) => (
-                                <View
-                                    key={index}
-                                    style={[
-                                        styles.chartBar,
-                                        { height: `${100 - height}%` },
-                                        index === 6 && styles.chartBarActive,
-                                    ]}
-                                />
-                            ))}
+                            {volumeData.slice(-7).map((point, index) => {
+                                const maxVolume = Math.max(...volumeData.map(p => p.volume), 1);
+                                const height = (point.volume / maxVolume) * 100;
+                                return (
+                                    <View
+                                        key={index}
+                                        style={[
+                                            styles.chartBar,
+                                            { height: `${Math.max(5, height)}%` },
+                                            index === volumeData.slice(-7).length - 1 && styles.chartBarActive,
+                                        ]}
+                                    />
+                                );
+                            })}
+                            {volumeData.length === 0 && (
+                                <UIText variant="body-sm" muted style={styles.noDataText}>
+                                    No workout data yet
+                                </UIText>
+                            )}
                         </View>
                         <View style={styles.chartGradient} />
-                    </View>
-
-                    <View style={styles.chartLabels}>
-                        <Label>Oct 01</Label>
-                        <Label>Oct 15</Label>
-                        <Label>Oct 31</Label>
                     </View>
                 </GlassCard>
 
                 {/* Calendar Card */}
                 <GlassCard style={styles.calendarCard}>
                     <View style={styles.calendarHeader}>
-                        <Heading level={3}>{currentMonth}</Heading>
+                        <Heading level={3}>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Heading>
                         <View style={styles.calendarNav}>
                             <Text style={styles.navArrow}>‹</Text>
                             <Text style={styles.navArrow}>›</Text>
@@ -107,54 +168,55 @@ export function HistoryScreen() {
 
                     {/* Calendar Grid */}
                     <View style={styles.calendarGrid}>
-                        {CALENDAR_DAYS.map((day, index) => {
-                            const isPast = day > 20; // дни прошлого месяца
-                            const hasWorkout = WORKOUT_DAYS.includes(day);
-                            const isToday = day === 3;
-
-                            return (
-                                <View key={index} style={styles.calendarDayContainer}>
-                                    <View style={[
-                                        styles.calendarDay,
-                                        isToday && styles.calendarDayToday,
+                        {calendarDays.map((dayInfo, index) => (
+                            <View key={index} style={styles.calendarDayContainer}>
+                                <View style={[
+                                    styles.calendarDay,
+                                    dayInfo.isToday && styles.calendarDayToday,
+                                ]}>
+                                    <Text style={[
+                                        styles.calendarDayText,
+                                        dayInfo.isToday && styles.calendarDayTextToday,
                                     ]}>
-                                        <Text style={[
-                                            styles.calendarDayText,
-                                            isPast && styles.calendarDayPast,
-                                            isToday && styles.calendarDayTextToday,
-                                        ]}>
-                                            {day}
-                                        </Text>
-                                    </View>
-                                    {hasWorkout && <View style={styles.workoutDot} />}
+                                        {dayInfo.day}
+                                    </Text>
                                 </View>
-                            );
-                        })}
+                                {dayInfo.hasWorkout && <View style={styles.workoutDot} />}
+                            </View>
+                        ))}
                     </View>
                 </GlassCard>
 
                 {/* Recent Logs */}
                 <View style={styles.logsSection}>
-                    <Label style={styles.sectionLabel}>Recent Logs</Label>
-                    {RECENT_LOGS.map(log => (
-                        <GlassCard
-                            key={log.id}
-                            accent="primary"
-                            style={styles.logCard}
-                            onPress={() => console.log('View log:', log.id)}
-                        >
-                            <View style={styles.logIcon}>
-                                <Text style={styles.logEmoji}>{log.icon}</Text>
-                            </View>
-                            <View style={styles.logInfo}>
-                                <Heading level={3}>{log.name}</Heading>
-                                <Label style={styles.logMeta}>
-                                    {log.date} • {log.duration} • {log.volume}
-                                </Label>
-                            </View>
-                            <Text style={styles.chevron}>›</Text>
+                    <Label style={styles.sectionLabel}>Recent Logs ({workouts.length})</Label>
+                    {workouts.length === 0 ? (
+                        <GlassCard style={styles.emptyCard}>
+                            <Text style={styles.emptyIcon}>🏋️</Text>
+                            <UIText variant="body" muted>No workouts yet</UIText>
+                            <UIText variant="body-sm" muted>Complete a workout to see it here</UIText>
                         </GlassCard>
-                    ))}
+                    ) : (
+                        workouts.map((workout: Workout) => (
+                            <GlassCard
+                                key={workout.id}
+                                accent="primary"
+                                style={styles.logCard}
+                                onPress={() => console.log('View log:', workout.id)}
+                            >
+                                <View style={styles.logIcon}>
+                                    <Text style={styles.logEmoji}>💪</Text>
+                                </View>
+                                <View style={styles.logInfo}>
+                                    <Heading level={3}>{workout.name}</Heading>
+                                    <Label style={styles.logMeta}>
+                                        {formatDate(workout.completed_at)} • {formatDuration(workout.duration_seconds)} • {formatVolume(workout.total_volume)}
+                                    </Label>
+                                </View>
+                                <Text style={styles.chevron}>›</Text>
+                            </GlassCard>
+                        ))
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -173,6 +235,14 @@ const styles = StyleSheet.create({
         padding: spacing.md,
         paddingBottom: 100,
         gap: spacing.lg,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: spacing.md,
     },
 
     // Header
@@ -235,14 +305,14 @@ const styles = StyleSheet.create({
     chartLine: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        justifyContent: 'space-between',
+        justifyContent: 'space-around',
         height: '100%',
         paddingHorizontal: spacing.sm,
     },
     chartBar: {
-        width: 4,
+        width: 8,
         backgroundColor: colors.primary.DEFAULT,
-        borderRadius: 2,
+        borderRadius: 4,
     },
     chartBarActive: {
         ...Platform.select({
@@ -264,10 +334,9 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: radius.md,
         borderBottomRightRadius: radius.md,
     },
-    chartLabels: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: spacing.md,
+    noDataText: {
+        flex: 1,
+        textAlign: 'center',
     },
 
     // Calendar Card
@@ -322,9 +391,6 @@ const styles = StyleSheet.create({
         fontWeight: typography.fontWeight.bold,
         color: colors.text.primary.dark,
     },
-    calendarDayPast: {
-        color: colors.text.muted.dark,
-    },
     calendarDayTextToday: {
         color: colors.primary.DEFAULT,
     },
@@ -342,6 +408,14 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         marginLeft: spacing.xs,
+    },
+    emptyCard: {
+        alignItems: 'center',
+        padding: spacing.xl,
+        gap: spacing.sm,
+    },
+    emptyIcon: {
+        fontSize: 48,
     },
     logCard: {
         flexDirection: 'row',
