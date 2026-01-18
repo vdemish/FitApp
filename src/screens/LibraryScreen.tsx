@@ -146,6 +146,7 @@ export function LibraryScreen() {
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
+                    style={styles.categoryPillsContainer}
                     contentContainerStyle={styles.categoryPills}
                 >
                     <CategoryPill
@@ -254,8 +255,12 @@ const styles = StyleSheet.create({
     },
 
     // Category Pills
+    categoryPillsContainer: {
+        marginHorizontal: -spacing.md, // Extend beyond parent padding
+    },
     categoryPills: {
         paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md, // Add padding inside content
         gap: spacing.sm,
     },
 

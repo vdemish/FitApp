@@ -2,8 +2,9 @@
  * CategoryPill - Кнопка-фильтр для категорий
  */
 
-import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
+import React, { useMemo } from 'react';
+import { Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { useThemeColors } from '@/hooks';
 import { colors, typography, radius } from '@/theme';
 
 interface CategoryPillProps {
@@ -23,17 +24,37 @@ export function CategoryPill({
     onPress,
     testID,
 }: CategoryPillProps) {
+    const themeColors = useThemeColors();
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        inactive: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        text: {
+            color: themeColors.textSecondary,
+        },
+        activeText: {
+            color: themeColors.background,
+        },
+    }), [themeColors]);
+
     return (
         <Pressable
             testID={testID}
             style={({ pressed }) => [
                 styles.container,
-                active ? styles.active : styles.inactive,
+                active ? styles.active : [styles.inactive, dynamicStyles.inactive],
                 pressed && styles.pressed,
             ]}
             onPress={onPress}
         >
-            <Text style={[styles.text, active && styles.activeText]}>
+            <Text style={[
+                styles.text,
+                dynamicStyles.text,
+                active && dynamicStyles.activeText
+            ]}>
                 {label}
             </Text>
         </Pressable>
@@ -61,9 +82,8 @@ const styles = StyleSheet.create({
         }),
     },
     inactive: {
-        backgroundColor: colors.surface.dark,
         borderWidth: 1,
-        borderColor: colors.border.dark,
+        // backgroundColor and borderColor are set dynamically via dynamicStyles.inactive
     },
     pressed: {
         transform: [{ scale: 0.95 }],
@@ -71,9 +91,6 @@ const styles = StyleSheet.create({
     text: {
         fontSize: typography.fontSize.bodySm,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.secondary.dark,
-    },
-    activeText: {
-        color: colors.background.dark,
+        // color is set dynamically via dynamicStyles.text
     },
 });

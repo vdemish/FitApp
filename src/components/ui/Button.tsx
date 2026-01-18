@@ -3,7 +3,7 @@
  * Variants: primary, secondary, ghost, icon
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Pressable,
     Text,
@@ -13,7 +13,8 @@ import {
     Platform,
     ActivityIndicator,
 } from 'react-native';
-import { colors, typography, spacing, radius } from '@/theme';
+import { useThemeColors } from '@/hooks';
+import { colors, typography, radius } from '@/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'icon';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -66,13 +67,43 @@ export function Button({
     style,
     testID,
 }: ButtonProps) {
+    const themeColors = useThemeColors();
     const isIcon = variant === 'icon';
     const sizeConfig = isIcon ? iconSizeStyles[size] : sizeStyles[size];
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        secondary: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        icon: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        secondaryText: {
+            color: themeColors.textSecondary,
+        },
+        ghostText: {
+            color: themeColors.textSecondary,
+        },
+        iconText: {
+            color: themeColors.textSecondary,
+        },
+    }), [themeColors]);
+
+    // Get dynamic variant style
+    const getDynamicVariantStyle = (): ViewStyle => {
+        if (variant === 'secondary') return dynamicStyles.secondary;
+        if (variant === 'icon') return dynamicStyles.icon;
+        return {};
+    };
 
     // Стили контейнера
     const containerStyles: ViewStyle[] = [
         styles.base,
         styles[variant],
+        getDynamicVariantStyle(),
         isIcon
             ? { width: (sizeConfig as typeof iconSizeStyles.md).size, height: (sizeConfig as typeof iconSizeStyles.md).size, borderRadius: sizeConfig.borderRadius }
             : { height: (sizeConfig as typeof sizeStyles.md).height, paddingHorizontal: (sizeConfig as typeof sizeStyles.md).paddingHorizontal, borderRadius: sizeConfig.borderRadius },
@@ -82,10 +113,19 @@ export function Button({
         style || {},
     ];
 
+    // Get dynamic text style
+    const getDynamicTextStyle = (): TextStyle => {
+        if (variant === 'secondary') return dynamicStyles.secondaryText;
+        if (variant === 'ghost') return dynamicStyles.ghostText;
+        if (variant === 'icon') return dynamicStyles.iconText;
+        return {};
+    };
+
     // Стили текста
     const textStyles: TextStyle[] = [
         styles.text,
         styles[`${variant}Text` as keyof typeof styles] as TextStyle,
+        getDynamicTextStyle(),
         !isIcon ? { fontSize: (sizeConfig as typeof sizeStyles.md).fontSize } : {},
     ].filter(Boolean) as TextStyle[];
 
@@ -101,7 +141,7 @@ export function Button({
         >
             {loading ? (
                 <ActivityIndicator
-                    color={variant === 'primary' ? colors.background.dark : colors.primary.DEFAULT}
+                    color={variant === 'primary' ? themeColors.background : colors.primary.DEFAULT}
                     size="small"
                 />
             ) : (
@@ -148,17 +188,15 @@ const styles = StyleSheet.create({
         }),
     },
     secondary: {
-        backgroundColor: colors.surface.dark,
+        // backgroundColor and borderColor are set dynamically
         borderWidth: 1,
-        borderColor: colors.border.dark,
     },
     ghost: {
         backgroundColor: colors.transparent,
     },
     icon: {
-        backgroundColor: colors.surface.dark,
+        // backgroundColor and borderColor are set dynamically
         borderWidth: 1,
-        borderColor: colors.border.dark,
     },
 
     // Свечение
@@ -185,12 +223,12 @@ const styles = StyleSheet.create({
         color: colors.background.dark,
     },
     secondaryText: {
-        color: colors.text.secondary.dark,
+        // color is set dynamically
     },
     ghostText: {
-        color: colors.text.secondary.dark,
+        // color is set dynamically
     },
     iconText: {
-        color: colors.text.secondary.dark,
+        // color is set dynamically
     },
 });

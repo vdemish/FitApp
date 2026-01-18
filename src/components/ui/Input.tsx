@@ -2,7 +2,7 @@
  * Input - Стилизованное текстовое поле ввода
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     TextInput,
@@ -11,6 +11,7 @@ import {
     TextInputProps,
     ViewStyle,
 } from 'react-native';
+import { useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
@@ -33,9 +34,22 @@ export function Input({
     ...props
 }: InputProps) {
     const [isFocused, setIsFocused] = useState(false);
+    const themeColors = useThemeColors();
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        input: {
+            color: themeColors.textPrimary,
+        },
+    }), [themeColors]);
 
     const containerStyles: ViewStyle[] = [
         styles.container,
+        dynamicStyles.container,
         isFocused && styles.focused,
         error && styles.error,
         !editable && styles.disabled,
@@ -48,8 +62,8 @@ export function Input({
                 <Text style={styles.icon}>{getIconEmoji(icon)}</Text>
             )}
             <TextInput
-                style={styles.input}
-                placeholderTextColor={colors.text.muted.dark}
+                style={[styles.input, dynamicStyles.input]}
+                placeholderTextColor={themeColors.textMuted}
                 editable={editable}
                 onFocus={(e) => {
                     setIsFocused(true);
@@ -84,10 +98,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         height: 52,
-        backgroundColor: colors.surface.dark,
+        // backgroundColor and borderColor are set dynamically via dynamicStyles.container
         borderRadius: radius.lg,
         borderWidth: 1,
-        borderColor: colors.border.dark,
         paddingHorizontal: spacing.md,
     },
     focused: {
@@ -107,7 +120,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: typography.fontSize.body,
-        color: colors.text.primary.dark,
+        // color is set dynamically via dynamicStyles.input
         paddingVertical: 0, // Убираем вертикальный padding для Android
     },
     errorText: {
