@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from '@/context/AuthContext';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 
 export default function App() {
@@ -18,8 +19,10 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <AuthProvider>
-          <RootNavigator />
-          <StatusBar style="light" />
+          <SettingsProvider>
+            <RootNavigator />
+            <StatusBar style="light" />
+          </SettingsProvider>
         </AuthProvider>
       </NavigationContainer>
     </SafeAreaProvider>

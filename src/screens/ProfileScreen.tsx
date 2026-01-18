@@ -3,11 +3,12 @@
  * Connected to real database via useUserStats and AuthContext
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
-import { useUserStats } from '@/hooks';
+import { useSettings } from '@/context/SettingsContext';
+import { useUserStats, useThemeColors } from '@/hooks';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
@@ -15,6 +16,13 @@ import { colors, typography, spacing, radius } from '@/theme';
 export function ProfileScreen() {
     const { user, profile, signOut } = useAuth();
     const { stats, loading } = useUserStats();
+    const { activeTheme, setTheme } = useSettings();
+    const themeColors = useThemeColors();
+
+    // Toggle between dark and light themes
+    const handleThemeToggle = async (isDark: boolean) => {
+        await setTheme(isDark ? 'dark' : 'light');
+    };
 
     const handleSignOut = async () => {
         try {
@@ -38,8 +46,36 @@ export function ProfileScreen() {
         return weight.toFixed(1);
     };
 
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: {
+            backgroundColor: themeColors.background,
+        },
+        statsRowBorder: {
+            borderTopColor: themeColors.border,
+        },
+        statValue: {
+            color: themeColors.textPrimary,
+        },
+        statDivider: {
+            backgroundColor: themeColors.border,
+        },
+        settingsLabel: {
+            color: themeColors.textPrimary,
+        },
+        settingsDivider: {
+            backgroundColor: themeColors.border,
+        },
+        chevron: {
+            color: themeColors.textMuted,
+        },
+        settingsRowPressed: {
+            backgroundColor: themeColors.surface,
+        },
+    }), [themeColors]);
+
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -71,7 +107,7 @@ export function ProfileScreen() {
                     </View>
 
                     {/* Stats Row */}
-                    <View style={styles.statsRow}>
+                    <View style={[styles.statsRow, dynamicStyles.statsRowBorder]}>
                         {loading ? (
                             <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
                         ) : (
@@ -82,14 +118,14 @@ export function ProfileScreen() {
                                     </UIText>
                                     <Label>Workouts</Label>
                                 </View>
-                                <View style={styles.statDivider} />
+                                <View style={[styles.statDivider, dynamicStyles.statDivider]} />
                                 <View style={styles.statItem}>
                                     <UIText variant="display" accent style={styles.statValue}>
                                         {formatWeight(stats?.currentWeight)}
                                     </UIText>
                                     <Label>Weight (kg)</Label>
                                 </View>
-                                <View style={styles.statDivider} />
+                                <View style={[styles.statDivider, dynamicStyles.statDivider]} />
                                 <View style={styles.statItem}>
                                     <UIText variant="display" style={styles.statValue}>
                                         {stats?.weekStreak || 0}
@@ -110,13 +146,13 @@ export function ProfileScreen() {
                             label="Personal Information"
                             onPress={() => console.log('Personal Info')}
                         />
-                        <View style={styles.settingsDivider} />
+                        <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
                             icon="📊"
                             label="Training Metrics"
                             onPress={() => console.log('Training Metrics')}
                         />
-                        <View style={styles.settingsDivider} />
+                        <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
                             icon="🔔"
                             label="Reminders & Notifications"
@@ -129,6 +165,25 @@ export function ProfileScreen() {
                 <View style={styles.section}>
                     <Label style={styles.sectionLabel}>App Preferences</Label>
                     <GlassCard style={styles.settingsCard}>
+                        {/* Dark Mode Toggle */}
+                        <View style={styles.settingsRow}>
+                            <View style={styles.settingsRowLeft}>
+                                <Text style={styles.settingsIcon}>🌙</Text>
+                                <UIText style={styles.settingsLabel}>Dark Mode</UIText>
+                            </View>
+                            <Switch
+                                value={activeTheme === 'dark'}
+                                onValueChange={handleThemeToggle}
+                                trackColor={{
+                                    false: colors.surface.dark,
+                                    true: colors.primary.DEFAULT,
+                                }}
+                                thumbColor={colors.text.primary.dark}
+                                testID="dark-mode-switch"
+                            />
+                        </View>
+                        <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
+                        {/* Rest Timer Sounds */}
                         <View style={styles.settingsRow}>
                             <View style={styles.settingsRowLeft}>
                                 <Text style={styles.settingsIcon}>⏱</Text>
@@ -144,7 +199,7 @@ export function ProfileScreen() {
                                 thumbColor={colors.text.primary.dark}
                             />
                         </View>
-                        <View style={styles.settingsDivider} />
+                        <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
                             icon="⚖️"
                             label="Units (kg, cm)"
