@@ -10,7 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
 import { TabNavigator } from './TabNavigator';
 import { LoginScreen } from '@/screens/LoginScreen';
-import { colors } from '@/theme';
+import { useThemeColors } from '@/hooks';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -21,6 +21,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
     const { user, loading } = useAuth();
+    const themeColors = useThemeColors();
 
     // Показать загрузку при проверке сессии
     if (loading) {
@@ -30,10 +31,10 @@ export function RootNavigator() {
                     flex: 1,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: colors.background.dark
+                    backgroundColor: themeColors.background
                 }}
             >
-                <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+                <ActivityIndicator size="large" color={themeColors.primary} />
             </View>
         );
     }

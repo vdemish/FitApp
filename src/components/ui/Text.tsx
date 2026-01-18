@@ -3,9 +3,10 @@
  * Heading, Text, Label для единообразия
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text as RNText, StyleSheet, TextStyle, TextProps as RNTextProps } from 'react-native';
 import { colors, typography } from '@/theme';
+import { useThemeColors } from '@/hooks';
 
 // ==========================================
 // HEADING
@@ -32,11 +33,13 @@ export function Heading({
     children,
     ...props
 }: HeadingProps) {
+    const themeColors = useThemeColors();
+
     return (
         <RNText
             style={[
                 headingStyles[level],
-                { color: accent ? colors.primary.DEFAULT : colors.text.primary.dark },
+                { color: accent ? themeColors.primary : themeColors.textPrimary },
                 style,
             ]}
             {...props}
@@ -80,17 +83,19 @@ export function Text({
     children,
     ...props
 }: TextComponentProps) {
-    const getColor = (): string => {
-        if (accent) return colors.primary.DEFAULT;
-        if (muted) return colors.text.muted.dark;
-        return colors.text.secondary.dark;
-    };
+    const themeColors = useThemeColors();
+
+    const textColor = useMemo((): string => {
+        if (accent) return themeColors.primary;
+        if (muted) return themeColors.textMuted;
+        return themeColors.textSecondary;
+    }, [accent, muted, themeColors]);
 
     return (
         <RNText
             style={[
                 textVariantStyles[variant],
-                { color: getColor() },
+                { color: textColor },
                 uppercase && styles.uppercase,
                 style,
             ]}
@@ -110,8 +115,17 @@ interface LabelProps extends RNTextProps {
 }
 
 export function Label({ style, children, ...props }: LabelProps) {
+    const themeColors = useThemeColors();
+
     return (
-        <RNText style={[styles.label, style]} {...props}>
+        <RNText
+            style={[
+                styles.label,
+                { color: themeColors.textMuted },
+                style
+            ]}
+            {...props}
+        >
             {children}
         </RNText>
     );
@@ -124,7 +138,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: typography.fontSize.caption,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.muted.dark,
+        // color is set dynamically via themeColors.textMuted
         textTransform: 'uppercase',
         letterSpacing: 2,
     },

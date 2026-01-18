@@ -9,6 +9,7 @@ import { LibraryScreen } from '@/screens/LibraryScreen';
 import { HistoryScreen } from '@/screens/HistoryScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { colors } from '@/theme';
+import { useThemeColors, useIsDarkTheme } from '@/hooks';
 
 export type TabParamList = {
     Workout: undefined;
@@ -20,6 +21,9 @@ export type TabParamList = {
 const Tab = createBottomTabNavigator<TabParamList>();
 
 export function TabNavigator() {
+    const themeColors = useThemeColors();
+    const isDark = useIsDarkTheme();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -46,11 +50,11 @@ export function TabNavigator() {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: colors.primary.DEFAULT,
-                tabBarInactiveTintColor: colors.tabBar.inactive.dark,
+                tabBarActiveTintColor: themeColors.primary,
+                tabBarInactiveTintColor: isDark ? colors.tabBar.inactive.dark : colors.tabBar.inactive.light,
                 tabBarStyle: {
-                    backgroundColor: colors.tabBar.background.dark,
-                    borderTopColor: colors.tabBar.border.dark,
+                    backgroundColor: isDark ? colors.tabBar.background.dark : colors.tabBar.background.light,
+                    borderTopColor: isDark ? colors.tabBar.border.dark : colors.tabBar.border.light,
                     paddingBottom: 8,
                     paddingTop: 8,
                     height: 80,

@@ -122,14 +122,14 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
         >
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1 bg-background-dark"
+                className="flex-1 bg-background-light dark:bg-background-dark"
             >
                 {/* Шапка модального окна */}
-                <View className="flex-row items-center justify-between px-4 py-4 border-b border-white/10">
+                <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-white/10">
                     <Pressable onPress={onClose} className="px-2 py-1">
                         <Text className="text-primary text-base">Отмена</Text>
                     </Pressable>
-                    <Text className="text-white text-lg font-bold">
+                    <Text className="text-slate-900 dark:text-white text-lg font-bold">
                         Редактировать профиль
                     </Text>
                     <Pressable
@@ -164,7 +164,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
 
                     {/* Поле: Имя */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Имя
                         </Text>
                         <TextInput
@@ -172,13 +172,13 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                             onChangeText={(text) => updateField('full_name', text)}
                             placeholder="Введите имя"
                             placeholderTextColor={colors.text.placeholder}
-                            className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
+                            className="bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base border border-slate-200 dark:border-white/10"
                         />
                     </View>
 
                     {/* Поле: Возраст */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Возраст
                         </Text>
                         <TextInput
@@ -190,13 +190,13 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                             placeholder="Ваш возраст"
                             placeholderTextColor={colors.text.placeholder}
                             keyboardType="number-pad"
-                            className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
+                            className="bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base border border-slate-200 dark:border-white/10"
                         />
                     </View>
 
                     {/* Поле: Пол */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Пол
                         </Text>
                         <View className="flex-row flex-wrap gap-2">
@@ -206,13 +206,13 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                                     onPress={() => updateField('gender', option.value)}
                                     className={`px-4 py-2 rounded-lg border ${formData.gender === option.value
                                         ? 'bg-primary border-primary'
-                                        : 'bg-white/5 border-white/10'
+                                        : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10'
                                         }`}
                                 >
                                     <Text
                                         className={`text-sm ${formData.gender === option.value
-                                            ? 'text-background-dark font-bold'
-                                            : 'text-white'
+                                            ? 'text-background-light dark:text-background-dark font-bold'
+                                            : 'text-slate-900 dark:text-white'
                                             }`}
                                     >
                                         {option.label}
@@ -224,7 +224,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
 
                     {/* Поле: Цель тренировок */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Цель тренировок
                         </Text>
                         <View className="flex-row flex-wrap gap-2">
@@ -234,13 +234,13 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                                     onPress={() => updateField('training_goal', option.value)}
                                     className={`px-4 py-2 rounded-lg border ${formData.training_goal === option.value
                                         ? 'bg-primary border-primary'
-                                        : 'bg-white/5 border-white/10'
+                                        : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10'
                                         }`}
                                 >
                                     <Text
                                         className={`text-sm ${formData.training_goal === option.value
-                                            ? 'text-background-dark font-bold'
-                                            : 'text-white'
+                                            ? 'text-background-light dark:text-background-dark font-bold'
+                                            : 'text-slate-900 dark:text-white'
                                             }`}
                                     >
                                         {option.label}
@@ -252,7 +252,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
 
                     {/* Поле: Вес */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Вес (кг)
                         </Text>
                         <TextInput
@@ -264,13 +264,13 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                             placeholder="Ваш вес"
                             placeholderTextColor={colors.text.placeholder}
                             keyboardType="decimal-pad"
-                            className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
+                            className="bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base border border-slate-200 dark:border-white/10"
                         />
                     </View>
 
                     {/* Поле: Рост */}
                     <View className="mb-4">
-                        <Text className="text-white/60 text-sm mb-2 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-sm mb-2 uppercase tracking-wider">
                             Рост (см)
                         </Text>
                         <TextInput
@@ -282,7 +282,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                             placeholder="Ваш рост"
                             placeholderTextColor={colors.text.placeholder}
                             keyboardType="decimal-pad"
-                            className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
+                            className="bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base border border-slate-200 dark:border-white/10"
                         />
                     </View>
 

@@ -123,11 +123,11 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <View className="flex-1 bg-background-dark">
+            <View className="flex-1 bg-background-light dark:bg-background-dark">
                 {/* Шапка модального окна */}
-                <View className="flex-row items-center justify-between px-4 py-4 border-b border-white/10">
+                <View className="flex-row items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-white/10">
                     <View className="w-16" />
-                    <Text className="text-white text-lg font-bold">
+                    <Text className="text-slate-900 dark:text-white text-lg font-bold">
                         Настройки
                     </Text>
                     <Pressable onPress={onClose} className="w-16 items-end">
@@ -138,13 +138,13 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                 <ScrollView className="flex-1 px-4 py-6">
                     {/* Секция: Уведомления */}
                     <View className="mb-6">
-                        <Text className="text-white/60 text-xs mb-3 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-xs mb-3 uppercase tracking-wider">
                             Уведомления
                         </Text>
-                        <View className="bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                        <View className="bg-slate-100 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
                             {/* Push-уведомления */}
                             <View className="flex-row items-center justify-between px-4 py-3">
-                                <Text className="text-white text-base">
+                                <Text className="text-slate-900 dark:text-white text-base">
                                     Push-уведомления
                                 </Text>
                                 <Switch
@@ -154,10 +154,10 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                     thumbColor={colors.input.thumb}
                                 />
                             </View>
-                            <View className="h-px bg-white/10 mx-4" />
+                            <View className="h-px bg-slate-200 dark:bg-white/10 mx-4" />
                             {/* Напоминания о тренировках */}
                             <View className="flex-row items-center justify-between px-4 py-3">
-                                <Text className="text-white text-base">
+                                <Text className="text-slate-900 dark:text-white text-base">
                                     Напоминания о тренировках
                                 </Text>
                                 <Switch
@@ -172,11 +172,11 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
 
                     {/* Секция: Изменить Email */}
                     <View className="mb-6">
-                        <Text className="text-white/60 text-xs mb-3 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-xs mb-3 uppercase tracking-wider">
                             Изменить Email
                         </Text>
-                        <View className="bg-white/5 rounded-xl overflow-hidden border border-white/10 p-4">
-                            <Text className="text-white/40 text-sm mb-2">
+                        <View className="bg-slate-100 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 p-4">
+                            <Text className="text-slate-400 dark:text-white/40 text-sm mb-2">
                                 Текущий: {user?.email}
                             </Text>
                             <TextInput
@@ -186,7 +186,7 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 placeholderTextColor={colors.text.placeholder}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                className="bg-white/5 rounded-lg px-4 py-3 text-white text-base border border-white/10 mb-3"
+                                className="bg-white dark:bg-white/5 rounded-lg px-4 py-3 text-slate-900 dark:text-white text-base border border-slate-200 dark:border-white/10 mb-3"
                             />
                             <Pressable
                                 onPress={handleChangeEmail}
@@ -196,7 +196,7 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 {emailLoading ? (
                                     <ActivityIndicator size="small" color={colors.background.dark} />
                                 ) : (
-                                    <Text className="text-background-dark font-bold text-base">
+                                    <Text className="text-background-light dark:text-background-dark font-bold text-base">
                                         Обновить Email
                                     </Text>
                                 )}
@@ -206,18 +206,18 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
 
                     {/* Секция: Безопасность */}
                     <View className="mb-6">
-                        <Text className="text-white/60 text-xs mb-3 uppercase tracking-wider">
+                        <Text className="text-slate-500 dark:text-white/60 text-xs mb-3 uppercase tracking-wider">
                             Безопасность
                         </Text>
-                        <View className="bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                        <View className="bg-slate-100 dark:bg-white/5 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
                             <Pressable
                                 onPress={handleResetPassword}
-                                className="px-4 py-4 active:bg-white/10"
+                                className="px-4 py-4 active:bg-slate-200 dark:active:bg-white/10"
                             >
-                                <Text className="text-white text-base">
+                                <Text className="text-slate-900 dark:text-white text-base">
                                     Сбросить пароль
                                 </Text>
-                                <Text className="text-white/40 text-sm mt-1">
+                                <Text className="text-slate-400 dark:text-white/40 text-sm mt-1">
                                     Отправить письмо для сброса пароля
                                 </Text>
                             </Pressable>

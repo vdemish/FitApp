@@ -17,6 +17,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
+import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 
 // ============================================================================
 // ТИПЫ
@@ -93,6 +94,9 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     // Получаем системную тему через React Native
     const systemColorScheme = useColorScheme();
 
+    // NativeWind colorScheme для синхронизации Tailwind dark: классов
+    const { setColorScheme } = useNativeWindColorScheme();
+
     // Загрузка настроек из AsyncStorage при монтировании
     useEffect(() => {
         const loadSettings = async () => {
@@ -103,8 +107,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
                     AsyncStorage.getItem(STORAGE_KEYS.REST_TIMER_SOUNDS),
                 ]);
 
+                const loadedTheme = (themeValue as ThemeMode) || 'dark';
+
+                // Синхронизируем NativeWind с загруженной темой
+                setColorScheme(loadedTheme);
+
                 setState({
-                    theme: (themeValue as ThemeMode) || 'dark',
+                    theme: loadedTheme,
                     units: (unitsValue as UnitSystem) || 'metric',
                     restTimerSounds: soundsValue !== 'false', // По умолчанию true
                     loading: false,
@@ -116,17 +125,22 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         };
 
         loadSettings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Установка темы
     const setTheme = useCallback(async (theme: ThemeMode) => {
         try {
             await AsyncStorage.setItem(STORAGE_KEYS.THEME, theme);
+
+            // Синхронизируем NativeWind colorScheme
+            setColorScheme(theme);
+
             setState(prev => ({ ...prev, theme }));
         } catch (error) {
             console.error('[SettingsContext] Ошибка сохранения темы:', error);
         }
-    }, []);
+    }, [setColorScheme]);
 
     // Установка единиц измерения
     const setUnits = useCallback(async (units: UnitSystem) => {

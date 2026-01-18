@@ -27,6 +27,10 @@ export function HistoryScreen() {
         textPrimary: { color: themeColors.textPrimary },
         textMuted: { color: themeColors.textMuted },
         border: { borderTopColor: themeColors.border },
+        navArrow: { color: themeColors.textMuted },
+        calendarDayText: { color: themeColors.textPrimary },
+        chevron: { color: themeColors.textMuted },
+        volumeValue: { color: themeColors.textPrimary },
     }), [themeColors]);
 
     // Форматирование даты
@@ -116,7 +120,7 @@ export function HistoryScreen() {
                         <View>
                             <Label>Total Volume (KG)</Label>
                             <View style={styles.volumeRow}>
-                                <UIText variant="display" style={styles.volumeValue}>
+                                <UIText variant="display" style={[styles.volumeValue, dynamicStyles.volumeValue]}>
                                     {formatVolume(totalVolume).replace(' kg', '')}
                                 </UIText>
                                 {volumeData.length > 1 && (
@@ -163,8 +167,8 @@ export function HistoryScreen() {
                     <View style={styles.calendarHeader}>
                         <Heading level={3}>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Heading>
                         <View style={styles.calendarNav}>
-                            <Text style={styles.navArrow}>‹</Text>
-                            <Text style={styles.navArrow}>›</Text>
+                            <Text style={[styles.navArrow, dynamicStyles.navArrow]}>‹</Text>
+                            <Text style={[styles.navArrow, dynamicStyles.navArrow]}>›</Text>
                         </View>
                     </View>
 
@@ -185,6 +189,7 @@ export function HistoryScreen() {
                                 ]}>
                                     <Text style={[
                                         styles.calendarDayText,
+                                        dynamicStyles.calendarDayText,
                                         dayInfo.isToday && styles.calendarDayTextToday,
                                     ]}>
                                         {dayInfo.day}
@@ -222,7 +227,7 @@ export function HistoryScreen() {
                                         {formatDate(workout.completed_at)} • {formatDuration(workout.duration_seconds)} • {formatVolume(workout.total_volume)}
                                     </Label>
                                 </View>
-                                <Text style={styles.chevron}>›</Text>
+                                <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
                             </GlassCard>
                         ))
                     )}
@@ -235,7 +240,7 @@ export function HistoryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background.dark,
+        // backgroundColor is set dynamically via dynamicStyles.container
     },
     scrollView: {
         flex: 1,
@@ -285,7 +290,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     volumeValue: {
-        color: colors.text.primary.dark,
+        // color is applied dynamically via dynamicStyles.volumeValue
     },
     percentBadge: {
         backgroundColor: `${colors.success}1A`,
@@ -364,7 +369,7 @@ const styles = StyleSheet.create({
     },
     navArrow: {
         fontSize: 24,
-        color: colors.text.muted.dark,
+        // color is applied dynamically via dynamicStyles.navArrow
     },
     weekDays: {
         flexDirection: 'row',
@@ -398,7 +403,7 @@ const styles = StyleSheet.create({
     calendarDayText: {
         fontSize: typography.fontSize.bodySm,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.primary.dark,
+        // color is applied dynamically via dynamicStyles.calendarDayText
     },
     calendarDayTextToday: {
         color: colors.primary.DEFAULT,
@@ -451,6 +456,6 @@ const styles = StyleSheet.create({
     },
     chevron: {
         fontSize: 24,
-        color: colors.text.muted.dark,
+        // color is applied dynamically via dynamicStyles.chevron
     },
 });

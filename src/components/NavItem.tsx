@@ -3,9 +3,10 @@
  * Bottom tab navigation item with active state
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View, StyleSheet, Platform } from 'react-native';
 import { colors, typography, spacing } from '@/theme';
+import { useThemeColors } from '@/hooks';
 
 interface NavItemProps {
     /** Имя иконки (emoji или Material Symbol) */
@@ -27,6 +28,24 @@ export function NavItem({
     onPress,
     testID,
 }: NavItemProps) {
+    const themeColors = useThemeColors();
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        icon: {
+            color: themeColors.textMuted,
+        },
+        iconActive: {
+            color: themeColors.primary,
+        },
+        label: {
+            color: themeColors.textMuted,
+        },
+        labelActive: {
+            color: themeColors.primary,
+        },
+    }), [themeColors]);
+
     return (
         <Pressable
             testID={testID}
@@ -36,7 +55,8 @@ export function NavItem({
             <View style={styles.iconContainer}>
                 <Text style={[
                     styles.icon,
-                    active && styles.iconActive,
+                    dynamicStyles.icon,
+                    active && [styles.iconActive, dynamicStyles.iconActive],
                 ]}>
                     {icon}
                 </Text>
@@ -44,7 +64,8 @@ export function NavItem({
             </View>
             <Text style={[
                 styles.label,
-                active && styles.labelActive,
+                dynamicStyles.label,
+                active && dynamicStyles.labelActive,
             ]}>
                 {label}
             </Text>
@@ -63,10 +84,8 @@ const styles = StyleSheet.create({
     },
     icon: {
         fontSize: 28,
-        color: colors.text.muted.dark,
     },
     iconActive: {
-        color: colors.primary.DEFAULT,
         transform: [{ scale: 1.1 }],
     },
     activeDot: {
@@ -92,12 +111,8 @@ const styles = StyleSheet.create({
     label: {
         fontSize: typography.fontSize.caption,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.muted.dark,
         textTransform: 'uppercase',
         letterSpacing: 2,
         marginTop: 4,
-    },
-    labelActive: {
-        color: colors.primary.DEFAULT,
     },
 });

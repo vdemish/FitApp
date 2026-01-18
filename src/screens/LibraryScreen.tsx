@@ -24,6 +24,8 @@ export function LibraryScreen() {
         container: { backgroundColor: themeColors.background },
         surface: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
         textMuted: { color: themeColors.textMuted },
+        exerciseIcon: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+        chevron: { color: themeColors.textMuted },
     }), [themeColors]);
 
     // Фильтрация упражнений
@@ -56,7 +58,7 @@ export function LibraryScreen() {
             style={styles.exerciseCard}
             onPress={() => console.log('Selected:', exercise.name)}
         >
-            <View style={[styles.exerciseIcon, highlighted && styles.exerciseIconHighlighted]}>
+            <View style={[styles.exerciseIcon, dynamicStyles.exerciseIcon, highlighted && styles.exerciseIconHighlighted]}>
                 <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
             </View>
             <View style={styles.exerciseInfo}>
@@ -65,7 +67,7 @@ export function LibraryScreen() {
                     {exercise.muscle_group?.name || 'Unknown'} • {exercise.exercise_type}
                 </UIText>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
         </GlassCard>
     );
 
@@ -196,7 +198,7 @@ export function LibraryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background.dark,
+        // backgroundColor is set dynamically via dynamicStyles.container
     },
     scrollView: {
         flex: 1,
@@ -280,9 +282,8 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: radius.lg,
-        backgroundColor: colors.surface.dark,
+        // backgroundColor and borderColor are set dynamically via dynamicStyles.exerciseIcon
         borderWidth: 1,
-        borderColor: colors.border.dark,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     },
     chevron: {
         fontSize: 24,
-        color: colors.text.muted.dark,
+        // color is set dynamically via dynamicStyles.chevron
     },
 
     // Empty State

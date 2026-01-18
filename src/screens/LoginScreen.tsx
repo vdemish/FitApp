@@ -38,6 +38,9 @@ export function LoginScreen() {
         border: { backgroundColor: themeColors.border },
         textPrimary: { color: themeColors.textPrimary },
         textSecondary: { color: themeColors.textSecondary },
+        dividerLine: { backgroundColor: themeColors.border },
+        oauthIcon: { color: themeColors.textPrimary },
+        oauthText: { color: themeColors.textSecondary },
     }), [themeColors]);
 
     const handleSubmit = async () => {
@@ -167,9 +170,9 @@ export function LoginScreen() {
 
                                 {/* Разделитель */}
                                 <View style={styles.divider}>
-                                    <View style={styles.dividerLine} />
+                                    <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
                                     <UIText variant="caption" muted>ИЛИ</UIText>
-                                    <View style={styles.dividerLine} />
+                                    <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
                                 </View>
 
                                 {/* OAuth кнопки */}
@@ -181,8 +184,8 @@ export function LoginScreen() {
                                         onPress={() => { }}
                                         testID="google-button"
                                     >
-                                        <Text style={styles.oauthIcon}>G</Text>
-                                        <Text style={styles.oauthText}>Продолжить с Google</Text>
+                                        <Text style={[styles.oauthIcon, dynamicStyles.oauthIcon]}>G</Text>
+                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Продолжить с Google</Text>
                                     </Button>
                                     <Button
                                         variant="secondary"
@@ -191,8 +194,8 @@ export function LoginScreen() {
                                         onPress={() => { }}
                                         testID="apple-button"
                                     >
-                                        <Text style={styles.oauthIcon}></Text>
-                                        <Text style={styles.oauthText}>Продолжить с Apple</Text>
+                                        <Text style={[styles.oauthIcon, dynamicStyles.oauthIcon]}></Text>
+                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Продолжить с Apple</Text>
                                     </Button>
                                 </View>
 
@@ -224,7 +227,7 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background.dark,
+        // backgroundColor is set dynamically in component via dynamicStyles
     },
     backgroundContainer: {
         ...StyleSheet.absoluteFillObject,
@@ -325,7 +328,7 @@ const styles = StyleSheet.create({
     dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: colors.border.dark,
+        // backgroundColor is set dynamically
     },
     oauthButtons: {
         gap: spacing.sm,
@@ -333,12 +336,12 @@ const styles = StyleSheet.create({
     oauthIcon: {
         fontSize: 18,
         marginRight: spacing.sm,
-        color: colors.text.primary.dark,
+        // color is set dynamically
     },
     oauthText: {
         fontSize: typography.fontSize.bodySm,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.secondary.dark,
+        // color is set dynamically
     },
     modeToggle: {
         flexDirection: 'row',

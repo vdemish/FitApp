@@ -175,10 +175,10 @@ export function ProfileScreen() {
                                 value={activeTheme === 'dark'}
                                 onValueChange={handleThemeToggle}
                                 trackColor={{
-                                    false: colors.surface.dark,
-                                    true: colors.primary.DEFAULT,
+                                    false: themeColors.border,
+                                    true: themeColors.primary,
                                 }}
-                                thumbColor={colors.text.primary.dark}
+                                thumbColor={themeColors.surface}
                                 testID="dark-mode-switch"
                             />
                         </View>
@@ -193,10 +193,10 @@ export function ProfileScreen() {
                                 value={true}
                                 onValueChange={() => { }}
                                 trackColor={{
-                                    false: colors.surface.dark,
-                                    true: colors.primary.DEFAULT,
+                                    false: themeColors.border,
+                                    true: themeColors.primary,
                                 }}
-                                thumbColor={colors.text.primary.dark}
+                                thumbColor={themeColors.surface}
                             />
                         </View>
                         <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
@@ -240,17 +240,25 @@ interface SettingsRowProps {
 }
 
 function SettingsRow({ icon, label, value, onPress }: SettingsRowProps) {
+    const themeColors = useThemeColors();
+
+    const dynamicStyles = useMemo(() => ({
+        settingsLabel: { color: themeColors.textPrimary },
+        chevron: { color: themeColors.textMuted },
+        pressed: { backgroundColor: themeColors.surface },
+    }), [themeColors]);
+
     return (
         <Pressable
             style={({ pressed }) => [
                 styles.settingsRow,
-                pressed && styles.settingsRowPressed,
+                pressed && dynamicStyles.pressed,
             ]}
             onPress={onPress}
         >
             <View style={styles.settingsRowLeft}>
                 <Text style={styles.settingsIcon}>{icon}</Text>
-                <UIText style={styles.settingsLabel}>{label}</UIText>
+                <UIText style={[styles.settingsLabel, dynamicStyles.settingsLabel]}>{label}</UIText>
             </View>
             <View style={styles.settingsRowRight}>
                 {value && (
@@ -258,7 +266,7 @@ function SettingsRow({ icon, label, value, onPress }: SettingsRowProps) {
                         {value}
                     </UIText>
                 )}
-                <Text style={styles.chevron}>›</Text>
+                <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
             </View>
         </Pressable>
     );
@@ -267,7 +275,7 @@ function SettingsRow({ icon, label, value, onPress }: SettingsRowProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background.dark,
+        // backgroundColor is set dynamically via dynamicStyles.container
     },
     scrollView: {
         flex: 1,
@@ -358,7 +366,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.xl,
         paddingTop: spacing.lg,
         borderTopWidth: 1,
-        borderTopColor: colors.border.dark,
+        // borderTopColor is set dynamically via dynamicStyles.statsRowBorder
     },
     statItem: {
         flex: 1,
@@ -366,12 +374,12 @@ const styles = StyleSheet.create({
     },
     statValue: {
         fontSize: typography.fontSize.h2,
-        color: colors.text.primary.dark,
+        // color is applied dynamically via dynamicStyles.statValue
     },
     statDivider: {
         width: 1,
         height: 40,
-        backgroundColor: colors.border.dark,
+        // backgroundColor is applied via dynamicStyles.statDivider
     },
 
     // Sections
@@ -393,7 +401,7 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
     },
     settingsRowPressed: {
-        backgroundColor: colors.surface.dark,
+        // backgroundColor is applied dynamically via dynamicStyles.settingsRowPressed
     },
     settingsRowLeft: {
         flexDirection: 'row',
@@ -409,7 +417,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     settingsLabel: {
-        color: colors.text.primary.dark,
+        // color is applied dynamically via dynamicStyles.settingsLabel
         fontWeight: typography.fontWeight.medium,
     },
     settingsValue: {
@@ -417,12 +425,12 @@ const styles = StyleSheet.create({
     },
     settingsDivider: {
         height: 1,
-        backgroundColor: colors.border.dark,
+        // backgroundColor is applied via dynamicStyles.settingsDivider
         marginHorizontal: spacing.lg,
     },
     chevron: {
         fontSize: 20,
-        color: colors.text.muted.dark,
+        // color is applied dynamically via dynamicStyles.chevron
     },
 
     // Sign Out
