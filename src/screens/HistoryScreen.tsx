@@ -3,12 +3,12 @@
  * Connected to real database via useWorkoutHistory and useUserStats hooks
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { useWorkoutHistory, useUserStats } from '@/hooks';
+import { useWorkoutHistory, useUserStats, useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Workout } from '@/types';
 
@@ -17,8 +17,17 @@ const WEEK_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 export function HistoryScreen() {
     const { workouts, loading: historyLoading } = useWorkoutHistory(10);
     const { stats, totalVolume, volumeData, loading: statsLoading } = useUserStats(30);
+    const themeColors = useThemeColors();
 
     const loading = historyLoading || statsLoading;
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: { backgroundColor: themeColors.background },
+        textPrimary: { color: themeColors.textPrimary },
+        textMuted: { color: themeColors.textMuted },
+        border: { borderTopColor: themeColors.border },
+    }), [themeColors]);
 
     // Форматирование даты
     const formatDate = (dateString: string | null): string => {
@@ -70,7 +79,7 @@ export function HistoryScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
                     <UIText variant="body-sm" muted style={styles.loadingText}>
@@ -82,7 +91,7 @@ export function HistoryScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}

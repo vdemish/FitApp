@@ -3,13 +3,13 @@
  * Connected to real database via useWorkout hook
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { RestTimerCard, IncrementDecrementInput } from '@/components';
-import { useWorkout } from '@/hooks';
+import { useWorkout, useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { WorkoutExercise, Set } from '@/types';
 
@@ -26,6 +26,15 @@ export function WorkoutScreen() {
     const [weight, setWeight] = useState(30.0);
     const [reps, setReps] = useState(12);
     const [restSeconds, setRestSeconds] = useState(90);
+    const themeColors = useThemeColors();
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: { backgroundColor: themeColors.background },
+        surface: { backgroundColor: themeColors.surface },
+        border: { borderColor: themeColors.border },
+        textMuted: { color: themeColors.textMuted },
+    }), [themeColors]);
 
     // Текущее упражнение (первое не завершённое)
     const currentExercise = workout?.exercises?.[0];
@@ -89,7 +98,7 @@ export function WorkoutScreen() {
     // Loading state
     if (loading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
                     <UIText variant="body-sm" muted style={styles.loadingText}>
@@ -103,7 +112,7 @@ export function WorkoutScreen() {
     // No active workout
     if (!workout) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyIcon}>🏋️</Text>
                     <Heading level={2}>Ready to Train?</Heading>
@@ -127,7 +136,7 @@ export function WorkoutScreen() {
     // No exercises in workout
     if (!currentExercise) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyIcon}>📚</Text>
                     <Heading level={2}>Add Exercises</Heading>
@@ -140,7 +149,7 @@ export function WorkoutScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}

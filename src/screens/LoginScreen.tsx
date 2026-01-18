@@ -3,7 +3,7 @@
  * Redesigned with glassmorphism design system
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeColors } from '@/hooks';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
@@ -24,11 +25,20 @@ type AuthMode = 'signIn' | 'signUp';
 
 export function LoginScreen() {
     const { signIn, signUp, loading, error, clearError } = useAuth();
+    const themeColors = useThemeColors();
 
     const [mode, setMode] = useState<AuthMode>('signIn');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: { backgroundColor: themeColors.background },
+        border: { backgroundColor: themeColors.border },
+        textPrimary: { color: themeColors.textPrimary },
+        textSecondary: { color: themeColors.textSecondary },
+    }), [themeColors]);
 
     const handleSubmit = async () => {
         try {
@@ -52,7 +62,7 @@ export function LoginScreen() {
         : email.length > 0 && password.length >= 6 && fullName.length > 0;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, dynamicStyles.container]}>
             {/* Динамический фон с градиентными пятнами */}
             <View style={styles.backgroundContainer}>
                 <View style={[styles.gradientBlob, styles.blobTopRight]} />

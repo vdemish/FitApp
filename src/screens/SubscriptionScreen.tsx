@@ -6,10 +6,12 @@
  * Кнопки: Upgrade, Restore, Cancel (все заглушки)
  */
 
-import React from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, Pressable, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeColors } from '@/hooks';
+import { colors, typography, spacing, radius } from '@/theme';
 
 // Список Premium-функций
 const PREMIUM_FEATURES = [
@@ -47,9 +49,20 @@ const PREMIUM_FEATURES = [
 
 export function SubscriptionScreen({ navigation }: any) {
     const { profile } = useAuth();
+    const themeColors = useThemeColors();
 
     // Текущий статус подписки
     const isPremium = profile?.subscription_tier === 'premium';
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: { backgroundColor: themeColors.background },
+        textPrimary: { color: themeColors.textPrimary },
+        textSecondary: { color: themeColors.textSecondary },
+        textMuted: { color: themeColors.textMuted },
+        surface: { backgroundColor: themeColors.surface },
+        border: { borderColor: themeColors.border },
+    }), [themeColors]);
 
     // Обработчик покупки
     const handleUpgrade = () => {
@@ -79,33 +92,33 @@ export function SubscriptionScreen({ navigation }: any) {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background-dark" edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
             {/* Шапка */}
-            <View className="flex-row items-center justify-between px-4 py-4">
+            <View style={styles.header}>
                 <Pressable
                     onPress={() => navigation.goBack()}
-                    className="px-2 py-1"
+                    style={styles.backButton}
                 >
-                    <Text className="text-primary text-base">← Назад</Text>
+                    <Text style={styles.backText}>← Назад</Text>
                 </Pressable>
-                <Text className="text-white text-lg font-bold">
+                <Text style={[styles.titleText, dynamicStyles.textPrimary]}>
                     Premium
                 </Text>
-                <View className="w-16" />
+                <View style={styles.spacer} />
             </View>
 
-            <ScrollView className="flex-1 px-4">
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                 {/* Баннер статуса */}
-                <View className={`rounded-2xl p-6 mb-6 ${isPremium
-                        ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30'
-                        : 'bg-white/5 border border-white/10'
-                    }`}>
-                    <View className="items-center">
-                        <Text className="text-4xl mb-3">{isPremium ? '👑' : '⭐'}</Text>
-                        <Text className="text-white text-xl font-bold mb-1">
+                <View style={[
+                    styles.statusBanner,
+                    isPremium ? styles.statusBannerPremium : styles.statusBannerFree
+                ]}>
+                    <View style={styles.statusContent}>
+                        <Text style={styles.statusIcon}>{isPremium ? '👑' : '⭐'}</Text>
+                        <Text style={[styles.statusTitle, dynamicStyles.textPrimary]}>
                             {isPremium ? 'Premium активен' : 'Перейдите на Premium'}
                         </Text>
-                        <Text className="text-white/60 text-center">
+                        <Text style={[styles.statusDescription, dynamicStyles.textSecondary]}>
                             {isPremium
                                 ? 'Вы уже пользуетесь всеми преимуществами'
                                 : 'Разблокируйте все возможности приложения'
@@ -115,42 +128,42 @@ export function SubscriptionScreen({ navigation }: any) {
                 </View>
 
                 {/* Список функций */}
-                <Text className="text-white/60 text-xs mb-4 uppercase tracking-wider">
+                <Text style={[styles.sectionLabel, dynamicStyles.textMuted]}>
                     Premium-функции
                 </Text>
 
-                <View className="bg-white/5 rounded-xl border border-white/10 mb-6">
+                <View style={[styles.featuresCard, dynamicStyles.surface, dynamicStyles.border]}>
                     {PREMIUM_FEATURES.map((feature, index) => (
                         <View key={feature.title}>
-                            <View className="flex-row items-start px-4 py-4">
-                                <Text className="text-2xl mr-4">{feature.icon}</Text>
-                                <View className="flex-1">
-                                    <Text className="text-white text-base font-semibold mb-1">
+                            <View style={styles.featureRow}>
+                                <Text style={styles.featureIcon}>{feature.icon}</Text>
+                                <View style={styles.featureInfo}>
+                                    <Text style={[styles.featureTitle, dynamicStyles.textPrimary]}>
                                         {feature.title}
                                     </Text>
-                                    <Text className="text-white/50 text-sm">
+                                    <Text style={[styles.featureDescription, dynamicStyles.textMuted]}>
                                         {feature.description}
                                     </Text>
                                 </View>
                                 {isPremium && (
-                                    <Text className="text-green-400 text-lg">✓</Text>
+                                    <Text style={styles.checkIcon}>✓</Text>
                                 )}
                             </View>
                             {index < PREMIUM_FEATURES.length - 1 && (
-                                <View className="h-px bg-white/10 mx-4" />
+                                <View style={[styles.divider, dynamicStyles.border]} />
                             )}
                         </View>
                     ))}
                 </View>
 
                 {/* Кнопки */}
-                <View className="gap-3 mb-8">
+                <View style={styles.buttonsContainer}>
                     {!isPremium && (
                         <Pressable
                             onPress={handleUpgrade}
-                            className="bg-primary rounded-xl py-4 items-center active:opacity-80"
+                            style={styles.upgradeButton}
                         >
-                            <Text className="text-background-dark text-base font-bold">
+                            <Text style={styles.upgradeButtonText}>
                                 Перейти на Premium — $9.99/мес
                             </Text>
                         </Pressable>
@@ -158,9 +171,9 @@ export function SubscriptionScreen({ navigation }: any) {
 
                     <Pressable
                         onPress={handleRestore}
-                        className="bg-white/5 rounded-xl py-4 items-center border border-white/10 active:bg-white/10"
+                        style={[styles.restoreButton, dynamicStyles.surface, dynamicStyles.border]}
                     >
-                        <Text className="text-white text-base">
+                        <Text style={[styles.restoreButtonText, dynamicStyles.textPrimary]}>
                             Восстановить покупки
                         </Text>
                     </Pressable>
@@ -168,9 +181,9 @@ export function SubscriptionScreen({ navigation }: any) {
                     {isPremium && (
                         <Pressable
                             onPress={handleCancel}
-                            className="py-4 items-center"
+                            style={styles.cancelButton}
                         >
-                            <Text className="text-red-400 text-sm">
+                            <Text style={styles.cancelButtonText}>
                                 Отменить подписку
                             </Text>
                         </Pressable>
@@ -178,7 +191,7 @@ export function SubscriptionScreen({ navigation }: any) {
                 </View>
 
                 {/* Юридическая информация */}
-                <Text className="text-white/30 text-xs text-center mb-8 leading-5">
+                <Text style={styles.legalText}>
                     Подписка автоматически продлевается каждый месяц.{'\n'}
                     Вы можете отменить её в любое время через App Store или Google Play.
                 </Text>
@@ -186,3 +199,160 @@ export function SubscriptionScreen({ navigation }: any) {
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.background.dark,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+    },
+    backButton: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+    },
+    backText: {
+        color: colors.primary.DEFAULT,
+        fontSize: typography.fontSize.body,
+    },
+    titleText: {
+        fontSize: typography.fontSize.h3,
+        fontWeight: typography.fontWeight.bold,
+        color: colors.text.primary.dark,
+    },
+    spacer: {
+        width: 64,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.xl,
+    },
+    statusBanner: {
+        borderRadius: radius.xl,
+        padding: spacing.lg,
+        marginBottom: spacing.lg,
+        borderWidth: 1,
+    },
+    statusBannerPremium: {
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        borderColor: 'rgba(245, 158, 11, 0.3)',
+    },
+    statusBannerFree: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    statusContent: {
+        alignItems: 'center',
+    },
+    statusIcon: {
+        fontSize: 40,
+        marginBottom: spacing.sm,
+    },
+    statusTitle: {
+        fontSize: typography.fontSize.h3,
+        fontWeight: typography.fontWeight.bold,
+        marginBottom: spacing.xs,
+        color: colors.text.primary.dark,
+    },
+    statusDescription: {
+        fontSize: typography.fontSize.body,
+        textAlign: 'center',
+        color: colors.text.secondary.dark,
+    },
+    sectionLabel: {
+        fontSize: typography.fontSize.caption,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: spacing.md,
+        color: colors.text.muted.dark,
+    },
+    featuresCard: {
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        marginBottom: spacing.lg,
+        backgroundColor: colors.surface.dark,
+        borderColor: colors.border.dark,
+    },
+    featureRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+    },
+    featureIcon: {
+        fontSize: 24,
+        marginRight: spacing.md,
+    },
+    featureInfo: {
+        flex: 1,
+    },
+    featureTitle: {
+        fontSize: typography.fontSize.body,
+        fontWeight: typography.fontWeight.semibold,
+        marginBottom: spacing.xs,
+        color: colors.text.primary.dark,
+    },
+    featureDescription: {
+        fontSize: typography.fontSize.bodySm,
+        color: colors.text.muted.dark,
+    },
+    checkIcon: {
+        fontSize: typography.fontSize.h3,
+        color: colors.success,
+    },
+    divider: {
+        height: 1,
+        marginHorizontal: spacing.md,
+        backgroundColor: colors.border.dark,
+    },
+    buttonsContainer: {
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
+    },
+    upgradeButton: {
+        backgroundColor: colors.primary.DEFAULT,
+        borderRadius: radius.lg,
+        paddingVertical: spacing.md,
+        alignItems: 'center',
+    },
+    upgradeButtonText: {
+        color: colors.background.dark,
+        fontSize: typography.fontSize.body,
+        fontWeight: typography.fontWeight.bold,
+    },
+    restoreButton: {
+        borderRadius: radius.lg,
+        paddingVertical: spacing.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        backgroundColor: colors.surface.dark,
+        borderColor: colors.border.dark,
+    },
+    restoreButtonText: {
+        fontSize: typography.fontSize.body,
+        color: colors.text.primary.dark,
+    },
+    cancelButton: {
+        paddingVertical: spacing.md,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: colors.error,
+        fontSize: typography.fontSize.bodySm,
+    },
+    legalText: {
+        color: 'rgba(255, 255, 255, 0.3)',
+        fontSize: typography.fontSize.caption,
+        textAlign: 'center',
+        lineHeight: 18,
+        marginBottom: spacing.lg,
+    },
+});

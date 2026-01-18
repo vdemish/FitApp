@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components';
-import { useExercises } from '@/hooks';
+import { useExercises, useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise, MuscleGroup } from '@/types';
 
@@ -17,6 +17,14 @@ export function LibraryScreen() {
     const { exercises, muscleGroups, loading, error } = useExercises();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
+    const themeColors = useThemeColors();
+
+    // Dynamic styles based on theme
+    const dynamicStyles = useMemo(() => ({
+        container: { backgroundColor: themeColors.background },
+        surface: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+        textMuted: { color: themeColors.textMuted },
+    }), [themeColors]);
 
     // Фильтрация упражнений
     const filteredExercises = useMemo(() => {
@@ -74,7 +82,7 @@ export function LibraryScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
                     <UIText variant="body-sm" muted style={styles.loadingText}>
@@ -87,7 +95,7 @@ export function LibraryScreen() {
 
     if (error) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.errorContainer}>
                     <Text style={styles.errorEmoji}>⚠️</Text>
                     <UIText variant="body" muted>{error}</UIText>
@@ -97,7 +105,7 @@ export function LibraryScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
