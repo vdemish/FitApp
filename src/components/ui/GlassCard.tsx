@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
         // Эмуляция стекла через тень на iOS
         ...Platform.select({
             ios: {
-                shadowColor: '#000',
+                shadowColor: colors.black,
                 shadowOffset: { width: 0, height: 8 },
                 shadowOpacity: 0.37,
                 shadowRadius: 16,

@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         borderColor: colors.border.dark,
     },
     ghost: {
-        backgroundColor: 'transparent',
+        backgroundColor: colors.transparent,
     },
     icon: {
         backgroundColor: colors.surface.dark,

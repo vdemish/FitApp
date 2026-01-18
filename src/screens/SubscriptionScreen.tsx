@@ -242,12 +242,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     statusBannerPremium: {
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-        borderColor: 'rgba(245, 158, 11, 0.3)',
+        backgroundColor: colors.subscription.highlight,
+        borderColor: colors.subscription.highlightBorder,
     },
     statusBannerFree: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: colors.subscription.card,
+        borderColor: colors.subscription.cardBorder,
     },
     statusContent: {
         alignItems: 'center',
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
         fontSize: typography.fontSize.bodySm,
     },
     legalText: {
-        color: 'rgba(255, 255, 255, 0.3)',
+        color: colors.subscription.text,
         fontSize: typography.fontSize.caption,
         textAlign: 'center',
         lineHeight: 18,

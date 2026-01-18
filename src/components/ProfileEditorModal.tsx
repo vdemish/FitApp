@@ -20,6 +20,7 @@ import {
     Platform,
 } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
+import { colors } from '@/theme';
 import type { ProfileUpdateData, Gender, TrainingGoal } from '@/types/auth';
 
 // ============================================================================
@@ -137,7 +138,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                         className="px-2 py-1"
                     >
                         {saving ? (
-                            <ActivityIndicator size="small" color="#00c3ff" />
+                            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
                         ) : (
                             <Text className="text-primary text-base font-semibold">
                                 Сохранить
@@ -170,7 +171,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                             value={formData.full_name || ''}
                             onChangeText={(text) => updateField('full_name', text)}
                             placeholder="Введите имя"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            placeholderTextColor={colors.text.placeholder}
                             className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
                         />
                     </View>
@@ -187,7 +188,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                                 updateField('age', isNaN(num) ? null : num);
                             }}
                             placeholder="Ваш возраст"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            placeholderTextColor={colors.text.placeholder}
                             keyboardType="number-pad"
                             className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
                         />
@@ -261,7 +262,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                                 updateField('current_weight_kg', isNaN(num) ? null : num);
                             }}
                             placeholder="Ваш вес"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            placeholderTextColor={colors.text.placeholder}
                             keyboardType="decimal-pad"
                             className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
                         />
@@ -279,7 +280,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                                 updateField('current_height_cm', isNaN(num) ? null : num);
                             }}
                             placeholder="Ваш рост"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            placeholderTextColor={colors.text.placeholder}
                             keyboardType="decimal-pad"
                             className="bg-white/5 rounded-xl px-4 py-3 text-white text-base border border-white/10"
                         />

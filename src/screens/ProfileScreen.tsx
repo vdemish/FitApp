@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
         borderColor: colors.background.dark,
         ...Platform.select({
             ios: {
-                shadowColor: '#000',
+                shadowColor: colors.black,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
                 shadowRadius: 4,

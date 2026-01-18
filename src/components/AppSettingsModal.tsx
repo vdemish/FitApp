@@ -18,6 +18,7 @@ import {
     Switch,
 } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
+import { colors } from '@/theme';
 
 // ============================================================================
 // ТИПЫ
@@ -149,8 +150,8 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 <Switch
                                     value={notificationsEnabled}
                                     onValueChange={setNotificationsEnabled}
-                                    trackColor={{ false: '#1a1a2e', true: '#00c3ff' }}
-                                    thumbColor="#fff"
+                                    trackColor={{ false: colors.input.track.false, true: colors.input.track.true }}
+                                    thumbColor={colors.input.thumb}
                                 />
                             </View>
                             <View className="h-px bg-white/10 mx-4" />
@@ -162,8 +163,8 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 <Switch
                                     value={remindersEnabled}
                                     onValueChange={setRemindersEnabled}
-                                    trackColor={{ false: '#1a1a2e', true: '#00c3ff' }}
-                                    thumbColor="#fff"
+                                    trackColor={{ false: colors.input.track.false, true: colors.input.track.true }}
+                                    thumbColor={colors.input.thumb}
                                 />
                             </View>
                         </View>
@@ -182,7 +183,7 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 value={newEmail}
                                 onChangeText={setNewEmail}
                                 placeholder="Новый email"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
+                                placeholderTextColor={colors.text.placeholder}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 className="bg-white/5 rounded-lg px-4 py-3 text-white text-base border border-white/10 mb-3"
@@ -193,7 +194,7 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                                 className="bg-primary rounded-lg py-3 items-center"
                             >
                                 {emailLoading ? (
-                                    <ActivityIndicator size="small" color="#090b1b" />
+                                    <ActivityIndicator size="small" color={colors.background.dark} />
                                 ) : (
                                     <Text className="text-background-dark font-bold text-base">
                                         Обновить Email
