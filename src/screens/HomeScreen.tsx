@@ -14,6 +14,7 @@ import { useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import { StartWorkoutModal } from '@/components';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
+import type { Exercise } from '@/types';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -53,17 +54,16 @@ export function HomeScreen() {
     const handleStartWorkoutNavigation = useCallback((params: {
         templateId?: string;
         workoutId?: string;
-        exerciseIds?: string[];
+        exercises?: Exercise[];
     }) => {
         console.log('Navigating to ActiveWorkout...');
-        console.log('[HomeScreen] Params:', params);
+        console.log('[HomeScreen] Params:', { ...params, exercises: params.exercises?.length });
 
-        // TODO: Handle exerciseIds - would need to create workout first and add these exercises
-        // For now, just pass templateId or workoutId
         try {
             navigation.navigate('ActiveWorkout', {
                 templateId: params.templateId,
                 workoutId: params.workoutId,
+                exercises: params.exercises,
             });
         } catch (error) {
             console.error('[HomeScreen] Navigation failed:', error);

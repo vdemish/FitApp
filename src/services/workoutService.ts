@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './supabase';
-import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate } from '@/types';
+import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate, Exercise } from '@/types';
 
 // ============================================================================
 // WORKOUTS
@@ -32,6 +32,8 @@ export async function getActiveWorkout(): Promise<Workout | null> {
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('started_at', { ascending: false })
+        .order('sort_order', { foreignTable: 'workout_exercises', ascending: true })
+        .order('set_number', { foreignTable: 'workout_exercises.sets', ascending: true })
         .limit(1)
         .maybeSingle();
 
@@ -97,6 +99,160 @@ export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]
     }
 
     return data || [];
+}
+
+/**
+ * Создаёт тренировку из шаблона
+ */
+export async function createWorkoutFromTemplate(templateId: string): Promise<Workout> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // 1. Fetch template with sorted exercises
+    const { data: template, error: templateError } = await supabase
+        .from('workout_templates')
+        .select(`
+            *,
+            exercises:template_exercises(
+                *,
+                exercise:exercises(*)
+            )
+        `)
+        .eq('id', templateId)
+        .order('sort_order', { foreignTable: 'template_exercises', ascending: true })
+        .single();
+
+    if (templateError || !template) {
+        console.error('[WorkoutService] Ошибка загрузки шаблона:', templateError?.message);
+        throw new Error('Template not found');
+    }
+
+    // 2. Create Workout
+    const { data: workout, error: workoutError } = await supabase
+        .from('workouts')
+        .insert({
+            user_id: user.id,
+            name: template.name,
+            template_id: template.id,
+            status: 'active',
+            icon: template.icon,
+            started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+    if (workoutError) {
+        console.error('[WorkoutService] Ошибка создания тренировки:', workoutError.message);
+        throw workoutError;
+    }
+
+    // 3. Copy exercises
+    if (template.exercises && template.exercises.length > 0) {
+        const workoutExercises = template.exercises.map((te: any) => ({
+            workout_id: workout.id,
+            exercise_id: te.exercise_id,
+            sort_order: te.sort_order, // CRITICAL: Copy sort_order
+            rest_seconds: te.rest_seconds,
+        }));
+
+        const { error: exercisesError } = await supabase
+            .from('workout_exercises')
+            .insert(workoutExercises);
+
+        if (exercisesError) {
+            console.error('[WorkoutService] Ошибка копирования упражнений:', exercisesError.message);
+            throw exercisesError;
+        }
+    }
+
+    // 4. Return full workout structure
+    const { data: fullWorkout, error: fetchError } = await supabase
+        .from('workouts')
+        .select(`
+            *,
+            exercises:workout_exercises(
+                *,
+                exercise:exercises(*),
+                sets:sets(*)
+            )
+        `)
+        .eq('id', workout.id)
+        .order('sort_order', { foreignTable: 'workout_exercises', ascending: true })
+        .single();
+
+    if (fetchError || !fullWorkout) {
+        console.error('[WorkoutService] Ошибка загрузки полной тренировки:', fetchError?.message);
+        return workout; // Fallback to basic workout
+    }
+
+    return fullWorkout;
+}
+
+/**
+ * Создаёт пустую тренировку с выбранными упражнениями
+ */
+export async function createWorkoutFromExercises(exercises: Exercise[]): Promise<Workout> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // 1. Create Workout
+    const { data: workout, error: workoutError } = await supabase
+        .from('workouts')
+        .insert({
+            user_id: user.id,
+            name: 'Тренировка',
+            status: 'active',
+            icon: 'fitness_center',
+            started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+    if (workoutError) {
+        console.error('[WorkoutService] Ошибка создания тренировки:', workoutError.message);
+        throw workoutError;
+    }
+
+    // 2. Add Exercises with index as sort_order
+    if (exercises && exercises.length > 0) {
+        const workoutExercises = exercises.map((ex, index) => ({
+            workout_id: workout.id,
+            exercise_id: ex.id,
+            sort_order: index, // CRITICAL: Use index
+            rest_seconds: 90, // Default rest
+        }));
+
+        const { error: exercisesError } = await supabase
+            .from('workout_exercises')
+            .insert(workoutExercises);
+
+        if (exercisesError) {
+            console.error('[WorkoutService] Ошибка добавления упражнений:', exercisesError.message);
+            throw exercisesError;
+        }
+    }
+
+    // 3. Return full workout structure
+    const { data: fullWorkout, error: fetchError } = await supabase
+        .from('workouts')
+        .select(`
+            *,
+            exercises:workout_exercises(
+                *,
+                exercise:exercises(*),
+                sets:sets(*)
+            )
+        `)
+        .eq('id', workout.id)
+        .order('sort_order', { foreignTable: 'workout_exercises', ascending: true })
+        .single();
+
+    if (fetchError || !fullWorkout) {
+        console.error('[WorkoutService] Ошибка загрузки полной тренировки:', fetchError?.message);
+        return workout; // Fallback to basic workout
+    }
+
+    return fullWorkout;
 }
 
 /**

@@ -13,12 +13,15 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { ActiveWorkoutScreen } from '@/screens/ActiveWorkoutScreen';
 import { useThemeColors } from '@/hooks';
 
+import { Exercise } from '@/types';
+
 export type RootStackParamList = {
     Login: undefined;
     Main: undefined;
     ActiveWorkout: {
         workoutId?: string;
         templateId?: string;
+        exercises?: Exercise[];
     };
 };
 

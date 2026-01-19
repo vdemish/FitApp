@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus } from '@/types';
+import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, Exercise } from '@/types';
 import * as workoutService from '@/services/workoutService';
 import type { SetData } from '@/components/active-workout';
 
@@ -168,7 +168,8 @@ function generateTempId(): string {
 
 export function useActiveWorkout(
     initialWorkoutId?: string,
-    templateId?: string
+    templateId?: string,
+    initialExercises?: Exercise[]
 ): UseActiveWorkoutReturn {
     // State
     const [workout, setWorkout] = useState<Workout | null>(null);
@@ -239,26 +240,41 @@ export function useActiveWorkout(
         fetchActiveWorkout();
     }, [fetchActiveWorkout]);
 
-    // Create workout from template if needed
+    // Create workout if needed
     useEffect(() => {
-        if (!isLoading && !workout && templateId) {
-            (async () => {
-                try {
-                    setIsLoading(true);
-                    const newWorkout = await workoutService.createWorkout(
-                        'New Workout',
-                        templateId
-                    );
+        // Only run if not loading and no workout exists
+        if (isLoading || workout) return;
+
+        const initWorkout = async () => {
+            try {
+                setIsLoading(true);
+                let newWorkout: Workout | null = null;
+
+                if (initialExercises && initialExercises.length > 0) {
+                    console.log('[useActiveWorkout] Creating from exercises:', initialExercises.length);
+                    newWorkout = await workoutService.createWorkoutFromExercises(initialExercises);
+                } else if (templateId) {
+                    console.log('[useActiveWorkout] Creating from template:', templateId);
+                    newWorkout = await workoutService.createWorkoutFromTemplate(templateId);
+                }
+
+                if (newWorkout) {
                     setWorkout(newWorkout);
                     previousWorkoutState.current = newWorkout;
-                } catch (err) {
-                    setError(err instanceof Error ? err.message : 'Failed to create workout');
-                } finally {
-                    setIsLoading(false);
                 }
-            })();
+            } catch (err) {
+                console.error('[useActiveWorkout] Failed to create workout:', err);
+                setError(err instanceof Error ? err.message : 'Failed to create workout');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        // Only run if we actually have params to create from
+        if (initialExercises?.length || templateId) {
+            initWorkout();
         }
-    }, [isLoading, workout, templateId]);
+    }, [isLoading, workout, templateId, initialExercises]);
 
     // ========================================================================
     // SET OPERATIONS

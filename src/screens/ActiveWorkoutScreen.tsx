@@ -39,11 +39,13 @@ export function ActiveWorkoutScreen() {
     // Get workout ID and template ID from route params
     const workoutId = route.params?.workoutId;
     const templateId = route.params?.templateId;
+    const initialExercises = route.params?.exercises;
 
     // Use the active workout hook
     const { workout, exercises, isLoading, error, timerState, actions } = useActiveWorkout(
         workoutId,
-        templateId
+        templateId,
+        initialExercises
     );
 
     // Dynamic styles

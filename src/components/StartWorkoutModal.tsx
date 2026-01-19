@@ -28,7 +28,7 @@ interface StartWorkoutModalProps {
     visible: boolean;
     onClose: () => void;
     /** Called when user wants to start a workout */
-    onStartWorkout?: (params: { templateId?: string; workoutId?: string; exerciseIds?: string[] }) => void;
+    onStartWorkout?: (params: { templateId?: string; workoutId?: string; exercises?: Exercise[] }) => void;
 }
 
 export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWorkoutModalProps) {
@@ -112,9 +112,8 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
     // Handle start with selected exercises
     const handleStartWithExercises = () => {
         console.log('[StartWorkoutModal] Starting with exercises:', selectedExercises.map(e => e.name));
-        const exerciseIds = selectedExercises.map(e => e.id);
         onClose();
-        onStartWorkout?.({ exerciseIds });
+        onStartWorkout?.({ exercises: selectedExercises });
     };
 
     // Get exercise emoji
