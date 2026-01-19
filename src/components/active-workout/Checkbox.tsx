@@ -45,9 +45,9 @@ export function Checkbox({ checked, onToggle, testID }: CheckboxProps) {
 
 const styles = StyleSheet.create({
     container: {
-        width: sizes.touchTarget,
-        height: sizes.touchTarget,
-        borderRadius: sizes.touchTarget / 2,
+        width: 32, // Reduced from sizes.touchTarget (usually 44-48)
+        height: 32,
+        borderRadius: 16,
         borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
@@ -56,47 +56,37 @@ const styles = StyleSheet.create({
     checked: {
         backgroundColor: colors.primary.DEFAULT,
         borderColor: colors.primary.DEFAULT,
-        ...Platform.select({
-            ios: {
-                shadowColor: colors.primary.DEFAULT,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.4,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
+        // Removed heavy shadow for cleaner look
     },
     pressed: {
         transform: [{ scale: 0.92 }],
         opacity: 0.8,
     },
     checkmarkContainer: {
-        width: 18,
-        height: 18,
+        width: 14, // Scaled down
+        height: 14,
         position: 'relative',
     },
     // Checkmark stem (the longer part)
     checkmarkStem: {
         position: 'absolute',
-        width: 3,
-        height: 12,
+        width: 2.5,
+        height: 10,
         backgroundColor: colors.white,
         borderRadius: 1.5,
-        left: 10,
-        top: 2,
+        left: 8,
+        top: 1,
         transform: [{ rotate: '45deg' }],
     },
     // Checkmark kick (the shorter part)
     checkmarkKick: {
         position: 'absolute',
-        width: 3,
-        height: 6,
+        width: 2.5,
+        height: 5,
         backgroundColor: colors.white,
         borderRadius: 1.5,
-        left: 3,
-        top: 8,
+        left: 2,
+        top: 6,
         transform: [{ rotate: '-45deg' }],
     },
 });

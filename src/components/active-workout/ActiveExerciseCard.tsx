@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { GlassCard } from '../ui/GlassCard';
 import { SetRow } from './SetRow';
-import { colors, typography, spacing } from '@/theme';
+import { typography, spacing } from '@/theme';
 import { useThemeColors } from '@/hooks';
 
 /** Data structure for a single set */
@@ -53,12 +53,22 @@ export function ActiveExerciseCard({
 }: ActiveExerciseCardProps) {
     const themeColors = useThemeColors();
 
+    // Dynamic styles
+    const dynamicStyles = {
+        exerciseName: { color: themeColors.textPrimary },
+        menuButton: { backgroundColor: themeColors.surface },
+        menuDot: { backgroundColor: themeColors.textMuted },
+        columnLabel: { color: themeColors.textMuted },
+        addSetButton: { borderColor: themeColors.border },
+        addSetText: { color: themeColors.primary },
+    };
+
     return (
         <GlassCard testID={testID} style={styles.card}>
             {/* Header */}
             <View style={styles.header}>
                 <Text
-                    style={[styles.exerciseName, { color: themeColors.textPrimary }]}
+                    style={[styles.exerciseName, dynamicStyles.exerciseName]}
                     numberOfLines={2}
                 >
                     {exerciseName}
@@ -68,31 +78,31 @@ export function ActiveExerciseCard({
                     onPress={onMenuPress}
                     style={({ pressed }) => [
                         styles.menuButton,
-                        { backgroundColor: themeColors.surface },
+                        dynamicStyles.menuButton,
                         pressed && styles.menuPressed,
                     ]}
                     accessibilityLabel="Exercise options"
                     accessibilityRole="button"
                 >
                     <View style={styles.menuDotsContainer}>
-                        <View style={[styles.menuDot, { backgroundColor: themeColors.textMuted }]} />
-                        <View style={[styles.menuDot, { backgroundColor: themeColors.textMuted }]} />
-                        <View style={[styles.menuDot, { backgroundColor: themeColors.textMuted }]} />
+                        <View style={[styles.menuDot, dynamicStyles.menuDot]} />
+                        <View style={[styles.menuDot, dynamicStyles.menuDot]} />
+                        <View style={[styles.menuDot, dynamicStyles.menuDot]} />
                     </View>
                 </Pressable>
             </View>
 
             {/* Column Headers */}
             <View style={styles.columnHeaders}>
-                <Text style={[styles.columnLabel, { color: themeColors.textMuted }]}>SET</Text>
-                <Text style={[styles.columnLabel, { color: themeColors.textMuted }]}>PREVIOUS</Text>
-                <Text style={[styles.columnLabel, styles.columnLabelFlex, { color: themeColors.textMuted }]}>
+                <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>SET</Text>
+                <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>PREVIOUS</Text>
+                <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
                     {weightUnit.toUpperCase()}
                 </Text>
-                <Text style={[styles.columnLabel, styles.columnLabelFlex, { color: themeColors.textMuted }]}>
+                <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
                     REPS
                 </Text>
-                <Text style={[styles.columnLabel, { color: themeColors.textMuted }]}>✓</Text>
+                <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>✓</Text>
             </View>
 
             {/* Sets List */}
@@ -120,11 +130,11 @@ export function ActiveExerciseCard({
                 onPress={onAddSet}
                 style={({ pressed }) => [
                     styles.addSetButton,
-                    { borderColor: themeColors.border },
+                    dynamicStyles.addSetButton,
                     pressed && styles.addSetPressed,
                 ]}
             >
-                <Text style={[styles.addSetText, { color: colors.primary.DEFAULT }]}>
+                <Text style={[styles.addSetText, dynamicStyles.addSetText]}>
                     + Add Set
                 </Text>
             </Pressable>
@@ -134,24 +144,24 @@ export function ActiveExerciseCard({
 
 const styles = StyleSheet.create({
     card: {
-        padding: spacing.lg,
+        padding: spacing.md, // Reduced from lg
     },
     header: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
-        marginBottom: spacing.md,
+        marginBottom: spacing.sm, // Reduced from md
     },
     exerciseName: {
-        fontSize: typography.fontSize.h3,
+        fontSize: typography.fontSize.body, // Reduced from h3
         fontWeight: typography.fontWeight.bold,
         flex: 1,
         marginRight: spacing.sm,
     },
     menuButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32, // Reduced from 36
+        height: 32, // Reduced from 36
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -173,11 +183,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
         gap: spacing.sm,
+        marginBottom: spacing.xs,
     },
     columnLabel: {
-        fontSize: typography.fontSize.caption,
+        fontSize: typography.fontSize.caption, // 12
         fontWeight: typography.fontWeight.bold,
-        letterSpacing: 1,
+        letterSpacing: 0.5,
         minWidth: 32,
         textAlign: 'center',
     },
@@ -189,8 +200,8 @@ const styles = StyleSheet.create({
     },
     addSetButton: {
         marginTop: spacing.md,
-        paddingVertical: spacing.md,
-        borderRadius: 12,
+        paddingVertical: spacing.sm, // Reduced from md
+        borderRadius: 8, // Reduced from 12
         borderWidth: 1,
         borderStyle: 'dashed',
         alignItems: 'center',
@@ -201,7 +212,7 @@ const styles = StyleSheet.create({
         transform: [{ scale: 0.98 }],
     },
     addSetText: {
-        fontSize: typography.fontSize.body,
+        fontSize: typography.fontSize.caption, // Reduced from body
         fontWeight: typography.fontWeight.semibold,
     },
 });

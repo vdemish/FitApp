@@ -3,7 +3,7 @@
  * Displays exercises, sets, and rest timer overlay
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -122,6 +122,31 @@ export function ActiveWorkoutScreen() {
         },
         [actions]
     );
+
+    // Timer interval logic
+    const [remainingTime, setRemainingTime] = React.useState(0);
+
+    // Update remaining time when timer state changes or on interval
+    useEffect(() => {
+        if (!timerState.isActive || !timerState.lastCompletedSetTimestamp) {
+            setRemainingTime(0);
+            return;
+        }
+
+        const updateTimer = () => {
+            const elapsed = Math.floor((Date.now() - timerState.lastCompletedSetTimestamp!) / 1000);
+            const remaining = Math.max(0, timerState.restSeconds - elapsed);
+            setRemainingTime(remaining);
+
+            // Optional: Auto-dismiss if 0? For now keep it at 0.
+            // if (remaining === 0) actions.dismissTimer();
+        };
+
+        updateTimer(); // Initial update
+        const interval = setInterval(updateTimer, 1000);
+
+        return () => clearInterval(interval);
+    }, [timerState.isActive, timerState.lastCompletedSetTimestamp, timerState.restSeconds]);
 
     // Render loading state
     if (isLoading) {
@@ -254,14 +279,10 @@ export function ActiveWorkoutScreen() {
             {timerState.isActive && (
                 <View style={styles.timerOverlay}>
                     <RestTimerCard
-                        seconds={timerState.restSeconds}
-                        onAdd={() => {
-                            // TODO: Add 10 seconds to timer
-                            console.log('Add 10s to timer');
-                        }}
-                        onSubtract={() => {
-                            actions.dismissTimer();
-                        }}
+                        seconds={remainingTime}
+                        onAdd={() => actions.addRestTime(10)}
+                        onSubtract={() => actions.addRestTime(-10)}
+                        onClose={actions.dismissTimer}
                         testID="rest-timer"
                     />
                 </View>
@@ -313,11 +334,12 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: spacing.md,
-        paddingBottom: spacing.xl,
+        paddingBottom: 150, // Ensure space for bottom elements
         gap: spacing.md,
     },
     scrollContentWithTimer: {
-        paddingBottom: 160, // Extra padding for timer overlay
+        // paddingBottom is already handled by scrollContent, but we can add more if needed
+        paddingBottom: 200,
     },
 
     // Loading State
@@ -393,5 +415,6 @@ const styles = StyleSheet.create({
         bottom: spacing.lg,
         left: spacing.lg,
         right: spacing.lg,
+        zIndex: 100, // Ensure it's above everything
     },
 });

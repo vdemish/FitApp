@@ -6,3 +6,4 @@
 export { Checkbox } from './Checkbox';
 export { SetRow } from './SetRow';
 export { ActiveExerciseCard, type SetData } from './ActiveExerciseCard';
+export { WheelInput } from './WheelInput';

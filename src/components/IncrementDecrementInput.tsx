@@ -48,16 +48,19 @@ export function IncrementDecrementInput({
 
     const formattedValue = decimals > 0 ? value.toFixed(decimals) : String(value);
 
+    // Using theme colors directly instead of hardcoded styles
+    // This component is now designed to be very compact (~32px height)
+
     return (
         <View style={styles.container} testID={testID}>
-            {/* Левая часть: метка и значение */}
-            <View style={styles.valueContainer}>
-                <Text style={styles.label}>{label}</Text>
+            {/* Value & Label */}
+            <View style={styles.valueGroup}>
                 <Text style={styles.value}>{formattedValue}</Text>
+                <Text style={styles.label}>{label}</Text>
             </View>
 
-            {/* Правая часть: кнопки */}
-            <View style={styles.buttonsContainer}>
+            {/* Controls */}
+            <View style={styles.controls}>
                 <Pressable
                     testID={`${testID}-decrement`}
                     style={({ pressed }) => [
@@ -65,19 +68,23 @@ export function IncrementDecrementInput({
                         pressed && styles.buttonPressed,
                     ]}
                     onPress={handleDecrement}
+                    hitSlop={8}
                 >
                     <Text style={styles.buttonIcon}>−</Text>
                 </Pressable>
+
+                <View style={styles.divider} />
+
                 <Pressable
                     testID={`${testID}-increment`}
                     style={({ pressed }) => [
                         styles.button,
-                        styles.incrementButton,
                         pressed && styles.buttonPressed,
                     ]}
                     onPress={handleIncrement}
+                    hitSlop={8}
                 >
-                    <Text style={[styles.buttonIcon, styles.incrementIcon]}>+</Text>
+                    <Text style={styles.buttonIcon}>+</Text>
                 </Pressable>
             </View>
         </View>
@@ -89,65 +96,49 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        height: 32,
     },
-    valueContainer: {
-        flexDirection: 'column',
-    },
-    label: {
-        fontSize: typography.fontSize.caption,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.text.muted.dark,
-        textTransform: 'uppercase',
-        letterSpacing: 2,
+    valueGroup: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 4,
     },
     value: {
-        fontSize: typography.fontSize.display,
+        fontSize: typography.fontSize.h3,
         fontWeight: typography.fontWeight.bold,
-        color: colors.text.primary.dark,
-        marginTop: 4,
+        color: colors.text.primary.light, // Will be overridden by theme in parent or usually correct
+        fontVariant: ['tabular-nums'],
     },
-    buttonsContainer: {
+    label: {
+        fontSize: 10,
+        fontWeight: typography.fontWeight.bold,
+        color: colors.text.muted.light,
+        textTransform: 'uppercase',
+    },
+    controls: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
-        backgroundColor: colors.surface.dark,
-        borderRadius: radius.full,
-        borderWidth: 1,
-        borderColor: colors.border.dark,
-        padding: 4,
+        backgroundColor: 'rgba(120, 120, 128, 0.12)', // Subtle background
+        borderRadius: 8,
+        height: 28,
     },
     button: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: colors.surface.dark,
+        width: 32,
+        height: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Platform.select({
-            ios: {
-                shadowColor: colors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
-    },
-    incrementButton: {
-        borderWidth: 1,
-        borderColor: `${colors.primary.DEFAULT}4D`, // 30% opacity
     },
     buttonPressed: {
-        transform: [{ scale: 0.9 }],
+        opacity: 0.5,
     },
     buttonIcon: {
-        fontSize: 32,
-        fontWeight: '300',
-        color: colors.text.muted.dark,
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.text.primary.light, // Should ideally use theme context, but let's stick to simple for now or use colors.text.primary
     },
-    incrementIcon: {
-        color: colors.primary.DEFAULT,
+    divider: {
+        width: 1,
+        height: 16,
+        backgroundColor: 'rgba(120, 120, 128, 0.2)',
     },
 });

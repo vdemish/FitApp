@@ -1,14 +1,10 @@
-/**
- * SetRow - Horizontal row for a single workout set
- * Displays set number, previous best, weight/reps inputs, and completion checkbox
- */
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { IncrementDecrementInput } from '../IncrementDecrementInput';
+import { WheelInput } from './WheelInput';
 import { Checkbox } from './Checkbox';
 import { colors, typography, spacing } from '@/theme';
 import { useThemeColors } from '@/hooks';
+import { getWeightItems, getRepsItems } from './pickerData';
 
 interface SetRowProps {
     /** Set number (1-based) */
@@ -47,6 +43,10 @@ export function SetRow({
 }: SetRowProps) {
     const themeColors = useThemeColors();
 
+    // Memoize picker items to avoid regenerating on every render
+    const weightItems = useMemo(() => getWeightItems(), []);
+    const repsItems = useMemo(() => getRepsItems(), []);
+
     return (
         <View
             testID={testID}
@@ -72,27 +72,24 @@ export function SetRow({
 
             {/* Weight Input */}
             <View style={styles.inputWrapper}>
-                <IncrementDecrementInput
+                <WheelInput
                     value={weight}
                     onChange={onWeightChange}
+                    items={weightItems}
                     label={weightUnit.toUpperCase()}
-                    step={2.5}
-                    min={0}
-                    max={500}
-                    decimals={1}
+                    title="Select Weight"
                     testID={`${testID}-weight`}
                 />
             </View>
 
             {/* Reps Input */}
             <View style={styles.inputWrapper}>
-                <IncrementDecrementInput
+                <WheelInput
                     value={reps}
                     onChange={onRepsChange}
+                    items={repsItems}
                     label="REPS"
-                    step={1}
-                    min={0}
-                    max={100}
+                    title="Select Reps"
                     testID={`${testID}-reps`}
                 />
             </View>
@@ -111,32 +108,35 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: spacing.md,
+        paddingVertical: spacing.xs,
         paddingHorizontal: spacing.sm,
-        gap: spacing.sm,
+        gap: spacing.xs,
         borderRadius: 12,
     },
     completedContainer: {
         opacity: 0.6,
     },
     setIndicator: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
     setNumber: {
-        fontSize: typography.fontSize.bodySm,
+        fontSize: typography.fontSize.caption,
         fontWeight: typography.fontWeight.semibold,
     },
     previousBest: {
-        fontSize: typography.fontSize.caption,
+        fontSize: 10,
         fontWeight: typography.fontWeight.normal,
-        minWidth: 60,
+        minWidth: 50,
     },
     inputWrapper: {
         flex: 1,
+        // Ensure inputs don't stretch too wide but fill space evenly
+        maxWidth: 120,
     },
 });
+

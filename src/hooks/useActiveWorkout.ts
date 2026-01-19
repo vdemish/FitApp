@@ -65,6 +65,8 @@ export interface UseActiveWorkoutReturn {
         removeExercise: (workoutExerciseId: string) => Promise<void>;
         /** Dismiss the rest timer */
         dismissTimer: () => void;
+        /** Add time to the rest timer */
+        addRestTime: (seconds: number) => void;
         /** Start a new workout */
         startWorkout: (name: string, templateId?: string) => Promise<void>;
         /** Finish the current workout */
@@ -636,6 +638,13 @@ export function useActiveWorkout(
         });
     }, []);
 
+    const addRestTime = useCallback((seconds: number) => {
+        setTimerState((prev) => ({
+            ...prev,
+            restSeconds: prev.restSeconds + seconds,
+        }));
+    }, []);
+
     // ========================================================================
     // DERIVED STATE
     // ========================================================================
@@ -660,6 +669,7 @@ export function useActiveWorkout(
             addExercise,
             removeExercise,
             dismissTimer,
+            addRestTime,
             startWorkout,
             finishWorkout,
             cancelWorkout,
