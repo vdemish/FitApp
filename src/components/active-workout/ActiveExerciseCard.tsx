@@ -38,6 +38,10 @@ interface ActiveExerciseCardProps {
     weightUnit?: string;
     /** ID for testing */
     testID?: string;
+    /** Whether the rest timer is currently active */
+    isResting?: boolean;
+    /** Whether this is the currently active exercise */
+    isActiveExercise?: boolean;
 }
 
 export function ActiveExerciseCard({
@@ -50,6 +54,8 @@ export function ActiveExerciseCard({
     onMenuPress,
     weightUnit = 'kg',
     testID,
+    isResting = false,
+    isActiveExercise = false,
 }: ActiveExerciseCardProps) {
     const themeColors = useThemeColors();
 
@@ -62,6 +68,12 @@ export function ActiveExerciseCard({
         addSetButton: { borderColor: themeColors.border },
         addSetText: { color: themeColors.primary },
     };
+
+    // Find the index of the first non-completed set
+    // Only if this exercise is active and we are not resting
+    const activeSetIndex = (isActiveExercise && !isResting)
+        ? sets.findIndex(set => !set.isCompleted)
+        : -1;
 
     return (
         <GlassCard testID={testID} style={styles.card}>
@@ -114,6 +126,7 @@ export function ActiveExerciseCard({
                         weight={set.weight}
                         reps={set.reps}
                         isCompleted={set.isCompleted}
+                        isActive={index === activeSetIndex}
                         previousBest={set.previousBest}
                         weightUnit={weightUnit}
                         onWeightChange={(value) => onSetChange?.(set.id, 'weight', value)}

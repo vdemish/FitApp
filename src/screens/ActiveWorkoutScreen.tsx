@@ -99,6 +99,11 @@ export function ActiveWorkoutScreen() {
         navigation.goBack();
     }, [exercises, actions, navigation]);
 
+    // Calculate active exercise ID (first exercise with incomplete sets)
+    const activeExerciseId = useMemo(() => {
+        return exercises.find(ex => ex.sets.some(s => !s.isCompleted))?.id;
+    }, [exercises]);
+
     // Handle set change (weight or reps)
     const handleSetChange = useCallback(
         (setId: string, field: 'weight' | 'reps', value: number) => {
@@ -138,8 +143,8 @@ export function ActiveWorkoutScreen() {
             const remaining = Math.max(0, timerState.restSeconds - elapsed);
             setRemainingTime(remaining);
 
-            // Optional: Auto-dismiss if 0? For now keep it at 0.
-            // if (remaining === 0) actions.dismissTimer();
+            // Auto-dismiss if 0
+            if (remaining === 0) actions.dismissTimer();
         };
 
         updateTimer(); // Initial update
@@ -265,10 +270,11 @@ export function ActiveWorkoutScreen() {
                                 }
                                 onToggleComplete={(setId) => handleToggleComplete(setId)}
                                 onMenuPress={() => {
-                                    // TODO: Show exercise options menu
                                     console.log('Menu pressed for:', exercise.name);
                                 }}
                                 testID={`exercise-card-${exercise.id}`}
+                                isResting={timerState.isActive}
+                                isActiveExercise={exercise.id === activeExerciseId}
                             />
                         ))
                     )}
@@ -280,9 +286,9 @@ export function ActiveWorkoutScreen() {
                 <View style={styles.timerOverlay}>
                     <RestTimerCard
                         seconds={remainingTime}
-                        onAdd={() => actions.addRestTime(10)}
-                        onSubtract={() => actions.addRestTime(-10)}
-                        onClose={actions.dismissTimer}
+                        onAdd30={() => actions.addRestTime(30)}
+                        onSubtract10={() => actions.addRestTime(-10)}
+                        onSkip={actions.dismissTimer}
                         testID="rest-timer"
                     />
                 </View>

@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useMemo, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { WheelInput } from './WheelInput';
 import { Checkbox } from './Checkbox';
 import { colors, typography, spacing } from '@/theme';
-import { useThemeColors } from '@/hooks';
+import { useThemeColors, useIsDarkTheme } from '@/hooks';
 import { getWeightItems, getRepsItems } from './pickerData';
 
 interface SetRowProps {
@@ -15,6 +15,8 @@ interface SetRowProps {
     reps: number;
     /** Whether the set is completed */
     isCompleted: boolean;
+    /** Whether this is the current active set */
+    isActive?: boolean;
     /** Callback when weight changes */
     onWeightChange: (value: number) => void;
     /** Callback when reps changes */
@@ -34,6 +36,7 @@ export function SetRow({
     weight,
     reps,
     isCompleted,
+    isActive = false,
     onWeightChange,
     onRepsChange,
     onToggleComplete,
@@ -42,23 +45,98 @@ export function SetRow({
     testID,
 }: SetRowProps) {
     const themeColors = useThemeColors();
+    const isDark = useIsDarkTheme();
+
+    // Animation value for the pulse effect
+    const pulseAnim = useRef(new Animated.Value(0)).current;
 
     // Memoize picker items to avoid regenerating on every render
     const weightItems = useMemo(() => getWeightItems(), []);
     const repsItems = useMemo(() => getRepsItems(), []);
 
+    // Setup pulse animation
+    useEffect(() => {
+        if (isActive) {
+            const animation = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, {
+                        toValue: 1,
+                        duration: 1500,
+                        useNativeDriver: false, // false because we animate colors/shadows
+                    }),
+                    Animated.timing(pulseAnim, {
+                        toValue: 0,
+                        duration: 1500,
+                        useNativeDriver: false,
+                    }),
+                ])
+            );
+            animation.start();
+            return () => animation.stop();
+        } else {
+            pulseAnim.setValue(0);
+        }
+    }, [isActive, pulseAnim]);
+
+    // Interpolate values for animation
+    const borderColor = pulseAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [
+            themeColors.surface, // Start with surface color (invisible border effectively)
+            isDark ? themeColors.primary : themeColors.primary, // Pulse to primary
+        ],
+    });
+
+    // Shadow opacity for dark mode "glow"
+    const shadowOpacity = pulseAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.5],
+    });
+
+    const activeStyle = isActive
+        ? {
+            borderColor: borderColor,
+            shadowColor: themeColors.primary,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: isDark ? shadowOpacity : 0,
+            shadowRadius: 10,
+            elevation: 4, // Android elevation
+            borderWidth: 1,
+        }
+        : {};
+
     return (
-        <View
+        <Animated.View
             testID={testID}
             style={[
                 styles.container,
                 { backgroundColor: themeColors.surface },
                 isCompleted && styles.completedContainer,
+                activeStyle,
             ]}
         >
             {/* Set Number Indicator */}
-            <View style={[styles.setIndicator, { borderColor: themeColors.border }]}>
-                <Text style={[styles.setNumber, { color: themeColors.textSecondary }]}>
+            <View
+                style={[
+                    styles.setIndicator,
+                    {
+                        borderColor: isActive ? themeColors.primary : themeColors.border,
+                        backgroundColor: isActive
+                            ? `${themeColors.primary}15`
+                            : 'transparent',
+                    },
+                ]}
+            >
+                <Text
+                    style={[
+                        styles.setNumber,
+                        {
+                            color: isActive
+                                ? themeColors.primary
+                                : themeColors.textSecondary,
+                        },
+                    ]}
+                >
                     {setNumber}
                 </Text>
             </View>
@@ -100,7 +178,7 @@ export function SetRow({
                 onToggle={onToggleComplete}
                 testID={`${testID}-checkbox`}
             />
-        </View>
+        </Animated.View>
     );
 }
 
@@ -112,6 +190,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         gap: spacing.xs,
         borderRadius: 12,
+        // Default border width 0 to avoid layout shift when active adds border
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
     completedContainer: {
         opacity: 0.6,

@@ -8,29 +8,29 @@ import { GlassCard } from './ui/GlassCard';
 import { typography, spacing, radius } from '@/theme';
 import { useThemeColors } from '@/hooks';
 
-interface RestTimerCardProps {
-    /** Время в секундах */
+export interface RestTimerCardProps {
+    /** Time in seconds */
     seconds: number;
-    /** Добавить время (+10 сек) */
-    onAdd?: () => void;
-    /** Уменьшить время (-5 сек) */
-    onSubtract?: () => void;
-    /** Закрыть таймер */
-    onClose?: () => void;
-    /** ID для тестирования */
+    /** Add time (+30 sec) */
+    onAdd30: () => void;
+    /** Subtract time (-10 sec) */
+    onSubtract10: () => void;
+    /** Skip rest */
+    onSkip: () => void;
+    /** ID for testing */
     testID?: string;
 }
 
 export function RestTimerCard({
     seconds,
-    onAdd,
-    onSubtract,
-    onClose,
+    onAdd30,
+    onSubtract10,
+    onSkip,
     testID,
 }: RestTimerCardProps) {
     const themeColors = useThemeColors();
 
-    // Форматирование MM:SS
+    // Format MM:SS
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     const formattedMinutes = String(minutes).padStart(2, '0');
@@ -56,7 +56,11 @@ export function RestTimerCard({
             borderColor: themeColors.primary,
         },
         primaryIcon: { color: themeColors.background },
-        closeIcon: { color: themeColors.textSecondary },
+        skipButton: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.error,
+        },
+        skipText: { color: themeColors.error },
     };
 
     return (
@@ -66,18 +70,7 @@ export function RestTimerCard({
             style={StyleSheet.flatten([styles.container, dynamicStyles.container])}
         >
             <View style={styles.content}>
-                {/* Close Button */}
-                {onClose && (
-                    <Pressable
-                        style={({ pressed }) => [styles.closeButton, pressed && styles.opacity50]}
-                        onPress={onClose}
-                        hitSlop={12}
-                    >
-                        <Text style={[styles.closeButtonText, dynamicStyles.closeIcon]}>✕</Text>
-                    </Pressable>
-                )}
-
-                {/* Метка и время */}
+                {/* Info */}
                 <View style={styles.timerInfo}>
                     <Text style={[styles.label, dynamicStyles.label]}>REST TIMER</Text>
                     <View style={styles.timeRow}>
@@ -87,29 +80,42 @@ export function RestTimerCard({
                     </View>
                 </View>
 
-                {/* Кнопки управления */}
+                {/* Buttons */}
                 <View style={styles.buttonsRow}>
                     <Pressable
-                        testID={`${testID}-subtract`}
+                        testID={`${testID}-subtract-10`}
                         style={({ pressed }) => [
                             styles.timerButton,
                             dynamicStyles.button,
                             pressed && styles.buttonPressed,
                         ]}
-                        onPress={onSubtract}
+                        onPress={onSubtract10}
                     >
                         <Text style={[styles.buttonIcon, dynamicStyles.buttonIcon]}>-10</Text>
                     </Pressable>
+
                     <Pressable
-                        testID={`${testID}-add`}
+                        testID={`${testID}-add-30`}
                         style={({ pressed }) => [
                             styles.timerButton,
                             dynamicStyles.primaryButton,
                             pressed && styles.buttonPressed,
                         ]}
-                        onPress={onAdd}
+                        onPress={onAdd30}
                     >
-                        <Text style={[styles.buttonIcon, dynamicStyles.primaryIcon]}>+10</Text>
+                        <Text style={[styles.buttonIcon, dynamicStyles.primaryIcon]}>+30</Text>
+                    </Pressable>
+
+                    <Pressable
+                        testID={`${testID}-skip`}
+                        style={({ pressed }) => [
+                            styles.timerButton,
+                            dynamicStyles.skipButton,
+                            pressed && styles.buttonPressed,
+                        ]}
+                        onPress={onSkip}
+                    >
+                        <Text style={[styles.buttonIcon, dynamicStyles.skipText]}>Skip</Text>
                     </Pressable>
                 </View>
             </View>
@@ -174,19 +180,5 @@ const styles = StyleSheet.create({
     buttonIcon: {
         fontSize: 14,
         fontWeight: typography.fontWeight.bold,
-    },
-    closeButton: {
-        position: 'absolute',
-        top: -spacing.sm,
-        right: -spacing.sm,
-        padding: spacing.xs,
-        zIndex: 10,
-    },
-    closeButtonText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    opacity50: {
-        opacity: 0.5,
     },
 });
