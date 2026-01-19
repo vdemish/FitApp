@@ -52,7 +52,10 @@ export function ActiveWorkoutScreen() {
     const dynamicStyles = useMemo(
         () => ({
             container: { backgroundColor: themeColors.background },
-            headerText: { color: themeColors.textPrimary },
+            headerText: {
+                color: themeColors.textPrimary,
+                fontVariant: ['tabular-nums'] as any,
+            },
             cancelText: { color: themeColors.textMuted },
         }),
         [themeColors]
@@ -204,7 +207,7 @@ export function ActiveWorkoutScreen() {
     }
 
     return (
-        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
+        <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top', 'bottom']}>
             <KeyboardAvoidingView
                 style={styles.keyboardView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -225,6 +228,10 @@ export function ActiveWorkoutScreen() {
                     <View style={styles.headerCenter}>
                         <Heading level={3} style={dynamicStyles.headerText}>
                             {workout.name || 'Current Workout'}
+                            {workout.started_at && `, `}
+                            {workout.started_at && (
+                                <WorkoutTimer startedAt={workout.started_at} />
+                            )}
                         </Heading>
                     </View>
 
@@ -294,6 +301,40 @@ export function ActiveWorkoutScreen() {
                 </View>
             )}
         </SafeAreaView>
+    );
+}
+
+// Helper component for workout timer
+function WorkoutTimer({ startedAt }: { startedAt: string | Date }) {
+    const [duration, setDuration] = React.useState('00:00:00');
+
+    useEffect(() => {
+        const start = new Date(startedAt).getTime();
+
+        const update = () => {
+            const now = Date.now();
+            const diff = Math.max(0, Math.floor((now - start) / 1000));
+
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            setDuration(
+                `${hours.toString().padStart(2, '0')}:${minutes
+                    .toString()
+                    .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+            );
+        };
+
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, [startedAt]);
+
+    return (
+        <Text style={{ fontVariant: ['tabular-nums'] }}>
+            {duration}
+        </Text>
     );
 }
 
