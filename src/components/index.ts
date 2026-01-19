@@ -10,3 +10,4 @@ export { CategoryPill } from './CategoryPill';
 export { IncrementDecrementInput } from './IncrementDecrementInput';
 export { RestTimerCard } from './RestTimerCard';
 export { NavItem } from './NavItem';
+export { StartWorkoutModal } from './StartWorkoutModal';

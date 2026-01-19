@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './supabase';
-import type { Workout, WorkoutExercise, Set, WorkoutStatus } from '@/types';
+import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate } from '@/types';
 
 // ============================================================================
 // WORKOUTS
@@ -66,6 +66,33 @@ export async function getWorkoutHistory(limit = 10): Promise<Workout[]> {
 
     if (error) {
         console.error('[WorkoutService] Ошибка загрузки истории:', error.message);
+        throw error;
+    }
+
+    return data || [];
+}
+
+/**
+ * Получает шаблоны тренировок
+ */
+export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+        .from('workout_templates')
+        .select(`
+            *,
+            exercises:template_exercises(
+                *,
+                exercise:exercises(*)
+            )
+        `)
+        .or(`user_id.eq.${user?.id || ''},is_system.eq.true`)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('[WorkoutService] Ошибка загрузки шаблонов:', error.message);
         throw error;
     }
 

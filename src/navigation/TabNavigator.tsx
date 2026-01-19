@@ -8,7 +8,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WorkoutScreen } from '@/screens/WorkoutScreen';
+import { HomeScreen } from '@/screens/HomeScreen';
 import { LibraryScreen } from '@/screens/LibraryScreen';
 import { HistoryScreen } from '@/screens/HistoryScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
@@ -16,7 +16,7 @@ import { colors } from '@/theme';
 import { useThemeColors, useIsDarkTheme } from '@/hooks';
 
 export type TabParamList = {
-    Workout: undefined;
+    Home: undefined;
     Library: undefined;
     History: undefined;
     Profile: undefined;
@@ -41,8 +41,8 @@ export function TabNavigator() {
                     const size = 24;
 
                     switch (route.name) {
-                        case 'Workout':
-                            iconName = focused ? 'barbell' : 'barbell-outline';
+                        case 'Home':
+                            iconName = focused ? 'home' : 'home-outline';
                             break;
                         case 'Library':
                             iconName = focused ? 'book' : 'book-outline';
@@ -103,7 +103,7 @@ export function TabNavigator() {
                 },
             })}
         >
-            <Tab.Screen name="Workout" component={WorkoutScreen} />
+            <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Library" component={LibraryScreen} />
             <Tab.Screen name="History" component={HistoryScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
