@@ -17,6 +17,8 @@ interface SetRowProps {
     isCompleted: boolean;
     /** Whether this is the current active set */
     isActive?: boolean;
+    /** Whether the set inputs are disabled */
+    disabled?: boolean;
     /** Callback when weight changes */
     onWeightChange: (value: number) => void;
     /** Callback when reps changes */
@@ -37,6 +39,7 @@ export function SetRow({
     reps,
     isCompleted,
     isActive = false,
+    disabled = false,
     onWeightChange,
     onRepsChange,
     onToggleComplete,
@@ -177,6 +180,7 @@ export function SetRow({
                 checked={isCompleted}
                 onToggle={onToggleComplete}
                 testID={`${testID}-checkbox`}
+                disabled={disabled}
             />
         </Animated.View>
     );

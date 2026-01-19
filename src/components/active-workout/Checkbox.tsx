@@ -11,27 +11,30 @@ import { useThemeColors } from '@/hooks';
 interface CheckboxProps {
     /** Whether the checkbox is checked */
     checked: boolean;
+    /** Whether the checkbox is disabled */
+    disabled?: boolean;
     /** Callback when checkbox is toggled */
     onToggle: () => void;
     /** ID for testing */
     testID?: string;
 }
 
-export function Checkbox({ checked, onToggle, testID }: CheckboxProps) {
+export function Checkbox({ checked, onToggle, testID, disabled = false }: CheckboxProps) {
     const themeColors = useThemeColors();
 
     return (
         <Pressable
             testID={testID}
-            onPress={onToggle}
+            onPress={disabled ? undefined : onToggle}
             style={({ pressed }) => [
                 styles.container,
                 { borderColor: checked ? colors.primary.DEFAULT : themeColors.border },
                 checked && styles.checked,
-                pressed && styles.pressed,
+                disabled && styles.disabled,
+                pressed && !disabled && styles.pressed,
             ]}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
+            accessibilityState={{ checked, disabled }}
         >
             {checked && (
                 <View style={styles.checkmarkContainer}>
@@ -57,6 +60,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primary.DEFAULT,
         borderColor: colors.primary.DEFAULT,
         // Removed heavy shadow for cleaner look
+    },
+    disabled: {
+        opacity: 0.4,
     },
     pressed: {
         transform: [{ scale: 0.92 }],

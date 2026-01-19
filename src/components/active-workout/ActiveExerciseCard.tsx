@@ -133,6 +133,7 @@ export function ActiveExerciseCard({
                         onRepsChange={(value) => onSetChange?.(set.id, 'reps', value)}
                         onToggleComplete={() => onToggleComplete?.(set.id)}
                         testID={`${testID}-set-${index + 1}`}
+                        disabled={isResting}
                     />
                 ))}
             </View>
