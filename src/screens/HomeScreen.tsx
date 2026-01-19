@@ -3,14 +3,19 @@
  * Displays current date and provides access to start new workouts
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GlassCard, Button, Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useThemeColors } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import { StartWorkoutModal } from '@/components';
+import type { RootStackParamList } from '@/navigation/RootNavigator';
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
 /**
  * Format date as "dd MMM, dddd" (e.g., "19 Jan, Sunday")
@@ -25,6 +30,7 @@ function formatDateHeader(date: Date): string {
 }
 
 export function HomeScreen() {
+    const navigation = useNavigation<HomeScreenNavigationProp>();
     const themeColors = useThemeColors();
     const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -42,6 +48,27 @@ export function HomeScreen() {
     const handleCloseModal = () => {
         setIsModalVisible(false);
     };
+
+    // Handle navigation to ActiveWorkoutScreen
+    const handleStartWorkoutNavigation = useCallback((params: {
+        templateId?: string;
+        workoutId?: string;
+        exerciseIds?: string[];
+    }) => {
+        console.log('Navigating to ActiveWorkout...');
+        console.log('[HomeScreen] Params:', params);
+
+        // TODO: Handle exerciseIds - would need to create workout first and add these exercises
+        // For now, just pass templateId or workoutId
+        try {
+            navigation.navigate('ActiveWorkout', {
+                templateId: params.templateId,
+                workoutId: params.workoutId,
+            });
+        } catch (error) {
+            console.error('[HomeScreen] Navigation failed:', error);
+        }
+    }, [navigation]);
 
     return (
         <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
@@ -100,6 +127,7 @@ export function HomeScreen() {
             <StartWorkoutModal
                 visible={isModalVisible}
                 onClose={handleCloseModal}
+                onStartWorkout={handleStartWorkoutNavigation}
             />
         </SafeAreaView>
     );

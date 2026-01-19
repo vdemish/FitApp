@@ -11,3 +11,6 @@ export { IncrementDecrementInput } from './IncrementDecrementInput';
 export { RestTimerCard } from './RestTimerCard';
 export { NavItem } from './NavItem';
 export { StartWorkoutModal } from './StartWorkoutModal';
+
+// Active Workout компоненты
+export * from './active-workout';

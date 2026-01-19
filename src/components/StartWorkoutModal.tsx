@@ -27,9 +27,11 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface StartWorkoutModalProps {
     visible: boolean;
     onClose: () => void;
+    /** Called when user wants to start a workout */
+    onStartWorkout?: (params: { templateId?: string; workoutId?: string; exerciseIds?: string[] }) => void;
 }
 
-export function StartWorkoutModal({ visible, onClose }: StartWorkoutModalProps) {
+export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWorkoutModalProps) {
     const themeColors = useThemeColors();
     const { workouts: historyWorkouts, loading: historyLoading } = useWorkoutHistory(2);
     const { templates, loading: templatesLoading } = useWorkoutTemplates(3);
@@ -94,23 +96,25 @@ export function StartWorkoutModal({ visible, onClose }: StartWorkoutModalProps) 
 
     // Handle start from history
     const handleStartFromHistory = (workout: Workout) => {
-        console.log('Start from history:', workout.name);
-        // TODO: Navigate to ActiveWorkoutScreen with history data
+        console.log('[StartWorkoutModal] Starting from history:', workout.name);
         onClose();
+        // Use template_id from the completed workout to create a new workout
+        onStartWorkout?.({ templateId: workout.template_id || undefined });
     };
 
     // Handle start from template
     const handleStartFromTemplate = (template: WorkoutTemplate) => {
-        console.log('Start from template:', template.name);
-        // TODO: Navigate to ActiveWorkoutScreen with template_id
+        console.log('[StartWorkoutModal] Starting from template:', template.name);
         onClose();
+        onStartWorkout?.({ templateId: template.id });
     };
 
     // Handle start with selected exercises
     const handleStartWithExercises = () => {
-        console.log('Start with exercises:', selectedExercises.map(e => e.name));
-        // TODO: Navigate to ActiveWorkoutScreen with selectedExercises
+        console.log('[StartWorkoutModal] Starting with exercises:', selectedExercises.map(e => e.name));
+        const exerciseIds = selectedExercises.map(e => e.id);
         onClose();
+        onStartWorkout?.({ exerciseIds });
     };
 
     // Get exercise emoji
