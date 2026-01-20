@@ -63,6 +63,8 @@ export interface UseActiveWorkoutReturn {
         addExercise: (exerciseId: string) => Promise<void>;
         /** Add multiple exercises to the workout */
         addExercises: (exerciseIds: string[]) => Promise<void>;
+        /** Reorder exercises in the workout */
+        reorderExercises: (data: ActiveExercise[]) => void;
         /** Remove an exercise from the workout */
         removeExercise: (workoutExerciseId: string) => Promise<void>;
         /** Dismiss the rest timer */
@@ -578,6 +580,47 @@ export function useActiveWorkout(
         [workout]
     );
 
+    const reorderExercises = useCallback(
+        (data: ActiveExercise[]) => {
+            setWorkout((prev) => {
+                if (!prev?.exercises) return prev;
+
+                // Create a map of current exercises for quick lookup
+                const currentExercisesMap = new Map(
+                    prev.exercises.map((e) => [e.id, e])
+                );
+
+                // Reconstruct the exercises array based on the new order
+                const reorderedExercises = data
+                    .map((item, index) => {
+                        const original = currentExercisesMap.get(item.workoutExerciseId);
+                        if (!original) return null;
+                        return {
+                            ...original,
+                            sort_order: index,
+                        };
+                    })
+                    .filter((e): e is WorkoutExercise => e !== null);
+
+                // If we lost any exercises, append them at the end
+                if (reorderedExercises.length !== prev.exercises.length) {
+                    const processedIds = new Set(reorderedExercises.map((e) => e.id));
+                    prev.exercises.forEach((e) => {
+                        if (!processedIds.has(e.id)) {
+                            reorderedExercises.push(e);
+                        }
+                    });
+                }
+
+                return {
+                    ...prev,
+                    exercises: reorderedExercises,
+                };
+            });
+        },
+        []
+    );
+
     const removeExercise = useCallback(
         async (workoutExerciseId: string) => {
             if (!workout?.exercises) return;
@@ -708,6 +751,7 @@ export function useActiveWorkout(
             removeSet,
             addExercise,
             addExercises,
+            reorderExercises,
             removeExercise,
             dismissTimer,
             addRestTime,

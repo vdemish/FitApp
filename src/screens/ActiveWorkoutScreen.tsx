@@ -8,13 +8,13 @@ import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     KeyboardAvoidingView,
     Platform,
     Pressable,
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActiveExerciseCard, RestTimerCard, AddExerciseModal } from '@/components';
 import { Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { useActiveWorkout, useThemeColors } from '@/hooks';
+import { useActiveWorkout, useThemeColors, ActiveExercise } from '@/hooks';
 import { triggerTimerTick, triggerSuccess, triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
@@ -272,63 +272,87 @@ export function ActiveWorkoutScreen() {
                 </View>
 
                 {/* Exercises List */}
-                <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={[
-                        styles.scrollContent,
-                        timerState.isActive && styles.scrollContentWithTimer,
-                    ]}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    {exercises.length === 0 ? (
-                        <View style={styles.noExercisesContainer}>
-                            <Ionicons
-                                name="add-circle-outline"
-                                size={48}
-                                color={themeColors.textMuted}
-                            />
-                            <UIText variant="body" muted style={styles.noExercisesText}>
-                                No exercises added yet.{'\n'}Add exercises to start your workout.
-                            </UIText>
-                        </View>
-                    ) : (
-                        exercises.map((exercise) => (
-                            <ActiveExerciseCard
-                                key={exercise.workoutExerciseId}
-                                exerciseName={exercise.name}
-                                sets={exercise.sets}
-                                onAddSet={() => handleAddSet(exercise.workoutExerciseId)}
-                                onSetChange={(setId, field, value) =>
-                                    handleSetChange(setId, field, value)
-                                }
-                                onToggleComplete={(setId) => handleToggleComplete(setId)}
-                                onMenuPress={() => {
-                                    console.log('Menu pressed for:', exercise.name);
+                {exercises.length === 0 ? (
+                    <View style={styles.noExercisesContainer}>
+                        <Ionicons
+                            name="add-circle-outline"
+                            size={48}
+                            color={themeColors.textMuted}
+                        />
+                        <UIText variant="body" muted style={styles.noExercisesText}>
+                            No exercises added yet.{'\n'}Add exercises to start your workout.
+                        </UIText>
+                        {/* Add Exercise Button (Static) */}
+                        <View style={styles.addExerciseContainer}>
+                            <Pressable
+                                style={[styles.addExerciseButton, dynamicStyles.addExerciseButton]}
+                                onPress={() => {
+                                    triggerSelection();
+                                    setAddExerciseModalVisible(true);
                                 }}
-                                testID={`exercise-card-${exercise.id}`}
-                                isResting={timerState.isActive}
-                                isActiveExercise={exercise.id === activeExerciseId}
-                            />
-                        ))
-                    )}
-
-                    {/* Add Exercise Button (Static) */}
-                    <View style={styles.addExerciseContainer}>
-                        <Pressable
-                            style={[styles.addExerciseButton, dynamicStyles.addExerciseButton]}
-                            onPress={() => {
-                                triggerSelection();
-                                setAddExerciseModalVisible(true);
-                            }}
-                        >
-                            <Ionicons name="add" size={24} color={themeColors.primary} />
-                            <UIText variant="body" style={{ color: themeColors.primary, fontWeight: '600' }}>
-                                Add Exercise
-                            </UIText>
-                        </Pressable>
+                            >
+                                <Ionicons name="add" size={24} color={themeColors.primary} />
+                                <UIText variant="body" style={{ color: themeColors.primary, fontWeight: '600' }}>
+                                    Add Exercise
+                                </UIText>
+                            </Pressable>
+                        </View>
                     </View>
-                </ScrollView>
+                ) : (
+                    <DraggableFlatList
+                        data={exercises}
+                        onDragEnd={({ data }) => actions.reorderExercises(data)}
+                        keyExtractor={(item) => item.workoutExerciseId}
+                        renderItem={({ item, drag, isActive }: RenderItemParams<ActiveExercise>) => (
+                            <ScaleDecorator>
+                                <Pressable
+                                    onLongPress={drag}
+                                    disabled={isActive}
+                                    style={{
+                                        marginBottom: spacing.md,
+                                        opacity: isActive ? 0.8 : 1,
+                                    }}
+                                >
+                                    <ActiveExerciseCard
+                                        exerciseName={item.name}
+                                        sets={item.sets}
+                                        onAddSet={() => handleAddSet(item.workoutExerciseId)}
+                                        onSetChange={(setId, field, value) =>
+                                            handleSetChange(setId, field, value)
+                                        }
+                                        onToggleComplete={(setId) => handleToggleComplete(setId)}
+                                        onMenuPress={() => {
+                                            console.log('Menu pressed for:', item.name);
+                                        }}
+                                        testID={`exercise-card-${item.id}`}
+                                        isResting={timerState.isActive}
+                                        isActiveExercise={item.id === activeExerciseId}
+                                    />
+                                </Pressable>
+                            </ScaleDecorator>
+                        )}
+                        contentContainerStyle={[
+                            styles.scrollContent,
+                            timerState.isActive && styles.scrollContentWithTimer,
+                        ]}
+                        ListFooterComponent={
+                            <View style={styles.addExerciseContainer}>
+                                <Pressable
+                                    style={[styles.addExerciseButton, dynamicStyles.addExerciseButton]}
+                                    onPress={() => {
+                                        triggerSelection();
+                                        setAddExerciseModalVisible(true);
+                                    }}
+                                >
+                                    <Ionicons name="add" size={24} color={themeColors.primary} />
+                                    <UIText variant="body" style={{ color: themeColors.primary, fontWeight: '600' }}>
+                                        Add Exercise
+                                    </UIText>
+                                </Pressable>
+                            </View>
+                        }
+                    />
+                )}
             </KeyboardAvoidingView>
 
             {/* Rest Timer Overlay */}
@@ -425,9 +449,7 @@ const styles = StyleSheet.create({
     },
 
     // Content
-    scrollView: {
-        flex: 1,
-    },
+    // scrollView removed
     scrollContent: {
         padding: spacing.md,
         paddingBottom: 150, // Ensure space for bottom elements
