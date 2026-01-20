@@ -35,7 +35,7 @@ interface StartWorkoutModalProps {
 export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWorkoutModalProps) {
     const themeColors = useThemeColors();
     const { workouts: historyWorkouts, loading: historyLoading } = useWorkoutHistory(2);
-    const { templates, loading: templatesLoading } = useWorkoutTemplates(3);
+    const { templates, loading: templatesLoading } = useWorkoutTemplates(50); // Fetch more templates for scrolling
     const { exercises, muscleGroups, loading: exercisesLoading } = useExercises();
 
     const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
@@ -202,8 +202,12 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                         {templatesLoading ? (
                             <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
                         ) : templates.length > 0 ? (
-                            <View style={styles.templateGrid}>
-                                {templates.slice(0, 3).map((template) => (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.templateScrollContent}
+                            >
+                                {templates.map((template) => (
                                     <GlassCard
                                         key={template.id}
                                         style={styles.templateCard}
@@ -211,10 +215,12 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                         onPressIn={() => triggerSelection()}
                                     >
                                         <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                        <UIText variant="body-sm" style={styles.templateName}>{template.name}</UIText>
+                                        <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
+                                            {template.name}
+                                        </UIText>
                                     </GlassCard>
                                 ))}
-                            </View>
+                            </ScrollView>
                         ) : (
                             <GlassCard style={styles.emptyCard}>
                                 <UIText variant="body-sm" muted>No templates available</UIText>
@@ -302,24 +308,26 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
 
                     {/* Bottom padding for floating button */}
                     <View style={{ height: 100 }} />
-                </ScrollView>
+                </ScrollView >
 
                 {/* Floating Start Button */}
-                {selectedExercises.length > 0 && (
-                    <View style={[styles.floatingButtonContainer, dynamicStyles.floatingButtonContainer]}>
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            glow
-                            onPress={() => { triggerSelection(); handleStartWithExercises(); }}
-                            style={styles.floatingButton}
-                        >
-                            {`START (${selectedExercises.length} exercises)`}
-                        </Button>
-                    </View>
-                )}
-            </SafeAreaView>
-        </Modal>
+                {
+                    selectedExercises.length > 0 && (
+                        <View style={[styles.floatingButtonContainer, dynamicStyles.floatingButtonContainer]}>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                glow
+                                onPress={() => { triggerSelection(); handleStartWithExercises(); }}
+                                style={styles.floatingButton}
+                            >
+                                {`START (${selectedExercises.length} exercises)`}
+                            </Button>
+                        </View>
+                    )
+                }
+            </SafeAreaView >
+        </Modal >
     );
 }
 
@@ -393,16 +401,17 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
     },
 
-    // Template Grid (3 columns)
-    templateGrid: {
-        flexDirection: 'row',
+    // Template Grid (horizontal scroll)
+    templateScrollContent: {
+        paddingHorizontal: spacing.xs, // Adjusted for scroll
         gap: spacing.sm,
     },
     templateCard: {
-        flex: 1,
+        width: 140, // Fixed width for horizontal items
         padding: spacing.md,
         alignItems: 'center',
-        minHeight: 100,
+        justifyContent: 'center',
+        minHeight: 110,
     },
     templateEmoji: {
         fontSize: 28,

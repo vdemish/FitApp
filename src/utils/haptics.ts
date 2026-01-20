@@ -57,3 +57,21 @@ export const triggerSuccess = async () => {
         console.debug('Haptics error:', error);
     }
 };
+
+
+/**
+ * Triggers an impact feedback.
+ * @param style 'light' | 'medium' | 'heavy'
+ */
+export const triggerImpact = async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (Platform.OS === 'web') return;
+    try {
+        let impactStyle = Haptics.ImpactFeedbackStyle.Medium;
+        if (style === 'light') impactStyle = Haptics.ImpactFeedbackStyle.Light;
+        if (style === 'heavy') impactStyle = Haptics.ImpactFeedbackStyle.Heavy;
+
+        await Haptics.impactAsync(impactStyle);
+    } catch (error) {
+        console.debug('Haptics error:', error);
+    }
+};

@@ -3,42 +3,70 @@
  * Connected to real database via useExercises hook
  */
 
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components';
-import { useExercises, useThemeColors } from '@/hooks';
-import { triggerSelection } from '@/utils/haptics';
-import { colors, typography, spacing, radius } from '@/theme';
-import type { Exercise, MuscleGroup } from '@/types';
+import { useExercises, useThemeColors, useWorkoutTemplates } from '@/hooks';
+import { saveNewTemplate } from '@/services/workoutService';
+import { triggerSelection, triggerImpact } from '@/utils/haptics';
+import { colors, spacing, radius } from '@/theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { Exercise, WorkoutTemplate } from '@/types';
+
+type RootStackParamList = {
+    ActiveWorkout: { templateId?: string; exercises?: Exercise[] };
+};
 
 export function LibraryScreen() {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { exercises, muscleGroups, loading, error } = useExercises();
+    const { templates, loading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more for library view
+    const themeColors = useThemeColors();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
-    const themeColors = useThemeColors();
+
+    // Selection Mode State
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+
+    // Save Modal State
+    const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
+    const [newTemplateName, setNewTemplateName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     // Dynamic styles based on theme
     const dynamicStyles = useMemo(() => ({
         container: { backgroundColor: themeColors.background },
         surface: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
-        textMuted: { color: themeColors.textMuted },
+        textSecondary: { color: themeColors.textSecondary },
         exerciseIcon: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
         chevron: { color: themeColors.textMuted },
+        floatingBar: { backgroundColor: themeColors.background, borderTopColor: themeColors.border },
+        modalOverlay: { backgroundColor: 'rgba(0,0,0,0.5)' },
+        modalContent: { backgroundColor: themeColors.surface },
     }), [themeColors]);
 
-    // Фильтрация упражнений
+    // My Templates (User created only)
+    // Assuming useWorkoutTemplates returns both system and user, we filter for local display if needed.
+    // However, the service `getWorkoutTemplates` returns everything. 
+    // Let's rely on the `is_system` flag to distinguish "My Templates".
+    const myTemplates = useMemo(() => {
+        return templates.filter(t => !t.is_system);
+    }, [templates]);
+
+    // Filter exercises
     const filteredExercises = useMemo(() => {
         let result = exercises;
 
-        // Фильтр по группе мышц
         if (selectedMuscleGroupId) {
             result = result.filter(e => e.muscle_group_id === selectedMuscleGroupId);
         }
 
-        // Фильтр по поиску
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             result = result.filter(e =>
@@ -50,32 +78,118 @@ export function LibraryScreen() {
         return result;
     }, [exercises, searchQuery, selectedMuscleGroupId]);
 
-    // Часто используемые (первые 2)
     const commonlyUsed = filteredExercises.slice(0, 2);
 
-    const renderExerciseCard = (exercise: Exercise, highlighted = false) => (
-        <GlassCard
-            key={exercise.id}
-            style={styles.exerciseCard}
-            onPress={() => {
-                triggerSelection();
-                console.log('Selected:', exercise.name);
-            }}
-        >
-            <View style={[styles.exerciseIcon, dynamicStyles.exerciseIcon, highlighted && styles.exerciseIconHighlighted]}>
-                <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
-            </View>
-            <View style={styles.exerciseInfo}>
-                <Heading level={3}>{exercise.name}</Heading>
-                <UIText variant="body-sm" muted>
-                    {exercise.muscle_group?.name || 'Unknown'} • {exercise.exercise_type}
-                </UIText>
-            </View>
-            <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
-        </GlassCard>
-    );
+    // Toggle Selection Mode
+    const toggleSelectionMode = () => {
+        triggerSelection();
+        if (isSelectionMode) {
+            // Exit mode
+            setIsSelectionMode(false);
+            setSelectedExercises([]);
+        } else {
+            // Enter mode
+            setIsSelectionMode(true);
+        }
+    };
 
-    // Простой маппинг иконок в emoji
+    // Handle Exercise Selection
+    const toggleExerciseSelection = (exercise: Exercise) => {
+        triggerSelection();
+        setSelectedExercises(prev => {
+            const exists = prev.find(e => e.id === exercise.id);
+            if (exists) {
+                return prev.filter(e => e.id !== exercise.id);
+            }
+            return [...prev, exercise];
+        });
+    };
+
+    const isSelected = (id: string) => !!selectedExercises.find(e => e.id === id);
+
+    // Save Template Handler
+    const handleSaveTemplate = async () => {
+        if (!newTemplateName.trim()) {
+            Alert.alert('Error', 'Please enter a template name');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            const exercisesToSave = selectedExercises.map((ex, index) => ({
+                exercise_id: ex.id,
+                sort_order: index,
+                // Default values
+                target_sets: 3,
+                rest_seconds: 90
+            }));
+
+            await saveNewTemplate(newTemplateName, exercisesToSave);
+
+            triggerImpact('heavy');
+            await refetchTemplates(); // Refresh the list
+
+            // Reset UI
+            setIsSaving(false);
+            setIsSaveModalVisible(false);
+            setNewTemplateName('');
+            setIsSelectionMode(false);
+            setSelectedExercises([]);
+
+            Alert.alert('Success', 'Template saved!');
+        } catch (err) {
+            console.error(err);
+            setIsSaving(false);
+            Alert.alert('Error', 'Failed to save template');
+        }
+    };
+
+    const renderExerciseCard = (exercise: Exercise, highlighted = false) => {
+        const selected = isSelected(exercise.id);
+
+        return (
+            <GlassCard
+                key={exercise.id}
+                style={[
+                    styles.exerciseCard,
+                    isSelectionMode && selected ? styles.exerciseCardSelected : undefined
+                ]}
+                onPress={() => {
+                    if (isSelectionMode) {
+                        toggleExerciseSelection(exercise);
+                    } else {
+                        triggerSelection();
+                        console.log('Selected:', exercise.name);
+                        // Future: Go to exercise details
+                    }
+                }}
+            >
+                <View style={[
+                    styles.exerciseIcon,
+                    dynamicStyles.exerciseIcon,
+                    highlighted && styles.exerciseIconHighlighted,
+                    isSelectionMode && selected && styles.exerciseIconSelected
+                ]}>
+                    <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
+                </View>
+                <View style={styles.exerciseInfo}>
+                    <Heading level={3}>{exercise.name}</Heading>
+                    <UIText variant="body-sm" muted>
+                        {exercise.muscle_group?.name || 'Unknown'} • {exercise.exercise_type}
+                    </UIText>
+                </View>
+
+                {isSelectionMode ? (
+                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                        {selected && <Text style={styles.checkmarkText}>✓</Text>}
+                    </View>
+                ) : (
+                    <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
+                )}
+            </GlassCard>
+        );
+    };
+
     const getExerciseEmoji = (icon: string): string => {
         const iconMap: Record<string, string> = {
             fitness_center: '🏋️',
@@ -86,25 +200,18 @@ export function LibraryScreen() {
         return iconMap[icon] || '🏋️';
     };
 
+    const getTemplateEmoji = (icon: string): string => {
+        const iconMap: Record<string, string> = {
+            fitness_center: '📋', // Default for custom
+        };
+        return iconMap[icon] || '📋';
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
-                    <UIText variant="body-sm" muted style={styles.loadingText}>
-                        Загрузка упражнений...
-                    </UIText>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
-    if (error) {
-        return (
-            <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorEmoji}>⚠️</Text>
-                    <UIText variant="body" muted>{error}</UIText>
                 </View>
             </SafeAreaView>
         );
@@ -121,20 +228,21 @@ export function LibraryScreen() {
                 <View style={styles.header}>
                     <View style={styles.headerTitle}>
                         <Heading level={1}>
-                            Exercise <Text style={styles.accentText}>Library</Text>
+                            {isSelectionMode ? 'Select Exercises' : <><Text style={styles.accentText}>Library</Text></>}
                         </Heading>
                     </View>
                     <Button
-                        variant="icon"
+                        variant={isSelectionMode ? "secondary" : "icon"}
                         size="sm"
-                        style={styles.addButton}
-                        onPress={() => {
-                            triggerSelection();
-                            console.log('Add exercise');
-                        }}
-                        testID="add-exercise-button"
+                        style={isSelectionMode ? styles.cancelButton : styles.addButton}
+                        onPress={toggleSelectionMode}
+                        testID="toggle-selection-button"
                     >
-                        <Text style={styles.addIcon}>+</Text>
+                        {isSelectionMode ? (
+                            <UIText variant="body-sm" style={{ color: colors.error }}>Cancel</UIText>
+                        ) : (
+                            <Text style={styles.addIcon}>+</Text>
+                        )}
                     </Button>
                 </View>
 
@@ -145,7 +253,6 @@ export function LibraryScreen() {
                         placeholder="Search exercises..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
-                        testID="search-input"
                     />
                 </View>
 
@@ -163,7 +270,6 @@ export function LibraryScreen() {
                             triggerSelection();
                             setSelectedMuscleGroupId(null);
                         }}
-                        testID="category-all"
                     />
                     {muscleGroups.map(group => (
                         <CategoryPill
@@ -174,13 +280,37 @@ export function LibraryScreen() {
                                 triggerSelection();
                                 setSelectedMuscleGroupId(group.id);
                             }}
-                            testID={`category-${group.name.toLowerCase().replace(/\s/g, '-')}`}
                         />
                     ))}
                 </ScrollView>
 
-                {/* Commonly Used Section */}
-                {commonlyUsed.length > 0 && (
+                {/* My Templates Section (Only in normal mode and if exists) */}
+                {!isSelectionMode && myTemplates.length > 0 && (
+                    <View style={styles.section}>
+                        <Label style={styles.sectionLabel}>My Templates</Label>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templatesList}>
+                            {myTemplates.map(template => (
+                                <GlassCard
+                                    key={template.id}
+                                    style={styles.templateCard}
+                                    onPress={() => {
+                                        triggerSelection();
+                                        // TODO: Open template details or start workout
+                                        console.log('Template pressed:', template.name);
+                                    }}
+                                >
+                                    <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
+                                    <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
+                                        {template.name}
+                                    </UIText>
+                                </GlassCard>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                {/* Commonly Used Section (Hide in selection mode to avoid duplicates confusion or simplify) */}
+                {!isSelectionMode && commonlyUsed.length > 0 && (
                     <View style={styles.section}>
                         <Label style={styles.sectionLabel}>Commonly Used</Label>
                         <View style={styles.exerciseList}>
@@ -191,20 +321,83 @@ export function LibraryScreen() {
 
                 {/* A-Z Section */}
                 <View style={styles.section}>
-                    <Label style={styles.sectionLabel}>A-Z ({filteredExercises.length})</Label>
+                    <Label style={styles.sectionLabel}>
+                        {isSelectionMode ? `All Exercises` : `A-Z (${filteredExercises.length})`}
+                    </Label>
                     <View style={styles.exerciseList}>
                         {filteredExercises.map(ex => renderExerciseCard(ex, false))}
                     </View>
                 </View>
 
-                {/* Empty State */}
-                {filteredExercises.length === 0 && (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>🔍</Text>
-                        <UIText variant="body" muted>No exercises found</UIText>
-                    </View>
-                )}
+                {/* Bottom Padding for Floating Bar */}
+                {isSelectionMode && <View style={{ height: 100 }} />}
             </ScrollView>
+
+            {/* Floating Save Bar */}
+            {isSelectionMode && selectedExercises.length > 0 && (
+                <View style={[styles.floatingBar, dynamicStyles.floatingBar]}>
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        glow
+                        onPress={() => {
+                            triggerSelection();
+                            setIsSaveModalVisible(true);
+                        }}
+                        style={styles.floatingButton}
+                    >
+                        {`Save New Template (${selectedExercises.length})`}
+                    </Button>
+                </View>
+            )}
+
+            {/* Save Template Modal */}
+            <Modal
+                transparent
+                visible={isSaveModalVisible}
+                animationType="fade"
+                onRequestClose={() => setIsSaveModalVisible(false)}
+            >
+                <Pressable
+                    style={[styles.modalOverlay, dynamicStyles.modalOverlay]}
+                    onPress={() => setIsSaveModalVisible(false)}
+                >
+                    <Pressable style={[styles.modalContent, dynamicStyles.modalContent]} onPress={(e) => e.stopPropagation()}>
+                        <Heading level={2} style={styles.modalTitle}>Save Template</Heading>
+                        <UIText variant="body" muted style={styles.modalSubtitle}>
+                            Create a new template with {selectedExercises.length} exercises.
+                        </UIText>
+
+                        <View style={styles.modalInputContainer}>
+                            <Label>Template Name</Label>
+                            <Input
+                                placeholder="e.g., Leg Day Blaster"
+                                value={newTemplateName}
+                                onChangeText={setNewTemplateName}
+                                autoFocus
+                            />
+                        </View>
+
+                        <View style={styles.modalButtons}>
+                            <Button
+                                variant="ghost"
+                                onPress={() => setIsSaveModalVisible(false)}
+                                style={styles.modalButton}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onPress={handleSaveTemplate}
+                                loading={isSaving}
+                                style={styles.modalButton}
+                            >
+                                Save
+                            </Button>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -212,32 +405,18 @@ export function LibraryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // backgroundColor is set dynamically via dynamicStyles.container
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
         padding: spacing.md,
-        paddingBottom: 100,
+        paddingBottom: 40,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: spacing.md,
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: spacing.xl,
-    },
-    errorEmoji: {
-        fontSize: 48,
-        marginBottom: spacing.md,
     },
 
     // Header
@@ -257,6 +436,9 @@ const styles = StyleSheet.create({
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         borderColor: `${colors.primary.DEFAULT}33`,
     },
+    cancelButton: {
+        minWidth: 80,
+    },
     addIcon: {
         fontSize: 24,
         color: colors.primary.DEFAULT,
@@ -269,11 +451,12 @@ const styles = StyleSheet.create({
 
     // Category Pills
     categoryPillsContainer: {
-        marginHorizontal: -spacing.md, // Extend beyond parent padding
+        marginHorizontal: -spacing.md,
+        marginBottom: 0,
     },
     categoryPills: {
         paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md, // Add padding inside content
+        paddingHorizontal: spacing.md,
         gap: spacing.sm,
     },
 
@@ -288,6 +471,28 @@ const styles = StyleSheet.create({
     exerciseList: {
         gap: spacing.md,
     },
+    templatesList: {
+        gap: spacing.md,
+        paddingRight: spacing.md,
+    },
+
+    // Template Card
+    templateCard: {
+        width: 140,
+        height: 120,
+        padding: spacing.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+    },
+    templateEmoji: {
+        fontSize: 32,
+    },
+    templateName: {
+        textAlign: 'center',
+        fontSize: 14,
+        fontWeight: '600',
+    },
 
     // Exercise Card
     exerciseCard: {
@@ -296,11 +501,15 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         gap: spacing.md,
     },
+    exerciseCardSelected: {
+        borderColor: colors.primary.DEFAULT,
+        borderWidth: 1,
+        backgroundColor: `${colors.primary.DEFAULT}0A`,
+    },
     exerciseIcon: {
         width: 56,
         height: 56,
         borderRadius: radius.lg,
-        // backgroundColor and borderColor are set dynamically via dynamicStyles.exerciseIcon
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -308,6 +517,10 @@ const styles = StyleSheet.create({
     exerciseIconHighlighted: {
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         borderColor: `${colors.primary.DEFAULT}33`,
+    },
+    exerciseIconSelected: {
+        backgroundColor: colors.primary.DEFAULT,
+        borderColor: colors.primary.DEFAULT,
     },
     exerciseEmoji: {
         fontSize: 28,
@@ -317,16 +530,76 @@ const styles = StyleSheet.create({
     },
     chevron: {
         fontSize: 24,
-        // color is set dynamically via dynamicStyles.chevron
     },
 
-    // Empty State
-    emptyState: {
+    // Checkbox
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: colors.textMuted,
         alignItems: 'center',
-        paddingVertical: spacing['2xl'],
+        justifyContent: 'center',
     },
-    emptyIcon: {
-        fontSize: 48,
-        marginBottom: spacing.md,
+    checkboxSelected: {
+        backgroundColor: colors.primary.DEFAULT,
+        borderColor: colors.primary.DEFAULT,
+    },
+    checkmarkText: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+
+    // Floating Bar
+    floatingBar: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: spacing.md,
+        paddingBottom: spacing.xl + 10, // Safe area
+        borderTopWidth: 1,
+    },
+    floatingButton: {
+        width: '100%',
+    },
+
+    // Modal
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.md,
+    },
+    modalContent: {
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: radius.xl,
+        padding: spacing.xl,
+        gap: spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
+        elevation: 5,
+    },
+    modalTitle: {
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        textAlign: 'center',
+    },
+    modalInputContainer: {
+        gap: spacing.xs,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        justifyContent: 'flex-end',
+    },
+    modalButton: {
+        flex: 1,
     },
 });

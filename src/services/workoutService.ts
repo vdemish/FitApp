@@ -102,6 +102,75 @@ export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]
 }
 
 /**
+ * Создаёт новый пользовательский шаблон тренировки
+ */
+export async function saveNewTemplate(
+    name: string,
+    exercises: { exercise_id: string; sort_order: number; target_sets?: number; rest_seconds?: number }[]
+): Promise<WorkoutTemplate> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // 1. Create Template
+    const { data: template, error: templateError } = await supabase
+        .from('workout_templates')
+        .insert({
+            user_id: user.id,
+            name,
+            icon: 'fitness_center', // Default icon
+            is_system: false,
+        })
+        .select()
+        .single();
+
+    if (templateError) {
+        console.error('[WorkoutService] Ошибка создания шаблона:', templateError.message);
+        throw templateError;
+    }
+
+    // 2. Add Exercises
+    if (exercises && exercises.length > 0) {
+        const templateExercises = exercises.map((ex) => ({
+            template_id: template.id,
+            exercise_id: ex.exercise_id,
+            sort_order: ex.sort_order,
+            target_sets: ex.target_sets || 3,
+            rest_seconds: ex.rest_seconds || 90,
+        }));
+
+        const { error: exercisesError } = await supabase
+            .from('template_exercises')
+            .insert(templateExercises);
+
+        if (exercisesError) {
+            console.error('[WorkoutService] Ошибка добавления упражнений в шаблон:', exercisesError.message);
+            // Consider cleanup here if critical, but for now we warn
+            throw exercisesError;
+        }
+    }
+
+    // 3. Return full template with exercises
+    const { data: fullTemplate, error: fetchError } = await supabase
+        .from('workout_templates')
+        .select(`
+            *,
+            exercises:template_exercises(
+                *,
+                exercise:exercises(*)
+            )
+        `)
+        .eq('id', template.id)
+        .order('sort_order', { foreignTable: 'template_exercises', ascending: true })
+        .single();
+
+    if (fetchError || !fullTemplate) {
+        return template;
+    }
+
+    return fullTemplate;
+}
+
+/**
  * Создаёт тренировку из шаблона
  */
 export async function createWorkoutFromTemplate(templateId: string): Promise<Workout> {
