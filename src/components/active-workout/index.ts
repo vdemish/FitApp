@@ -6,4 +6,6 @@
 export { Checkbox } from './Checkbox';
 export { SetRow } from './SetRow';
 export { ActiveExerciseCard, type SetData } from './ActiveExerciseCard';
+export { RestTimerCard } from './RestTimerCard';
+export { AddExerciseModal } from './AddExerciseModal';
 export { WheelInput } from './WheelInput';

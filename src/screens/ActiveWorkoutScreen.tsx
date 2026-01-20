@@ -20,7 +20,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ActiveExerciseCard, RestTimerCard } from '@/components';
+import { ActiveExerciseCard, RestTimerCard, AddExerciseModal } from '@/components';
 import { Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useActiveWorkout, useThemeColors } from '@/hooks';
@@ -35,6 +35,7 @@ export function ActiveWorkoutScreen() {
     const navigation = useNavigation<ActiveWorkoutNavigationProp>();
     const route = useRoute<ActiveWorkoutRouteProp>();
     const themeColors = useThemeColors();
+    const [isAddExerciseModalVisible, setAddExerciseModalVisible] = React.useState(false);
 
     // Get workout ID and template ID from route params
     const workoutId = route.params?.workoutId;
@@ -57,6 +58,7 @@ export function ActiveWorkoutScreen() {
                 fontVariant: ['tabular-nums'] as any,
             },
             cancelText: { color: themeColors.textMuted },
+            addExerciseButton: { backgroundColor: themeColors.surface },
         }),
         [themeColors]
     );
@@ -285,6 +287,19 @@ export function ActiveWorkoutScreen() {
                             />
                         ))
                     )}
+
+                    {/* Add Exercise Button (Static) */}
+                    <View style={styles.addExerciseContainer}>
+                        <Pressable
+                            style={[styles.addExerciseButton, dynamicStyles.addExerciseButton]}
+                            onPress={() => setAddExerciseModalVisible(true)}
+                        >
+                            <Ionicons name="add" size={24} color={themeColors.primary} />
+                            <UIText variant="body" style={{ color: themeColors.primary, fontWeight: '600' }}>
+                                Add Exercise
+                            </UIText>
+                        </Pressable>
+                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -300,6 +315,12 @@ export function ActiveWorkoutScreen() {
                     />
                 </View>
             )}
+
+            <AddExerciseModal
+                visible={isAddExerciseModalVisible}
+                onClose={() => setAddExerciseModalVisible(false)}
+                onAdd={actions.addExercises}
+            />
         </SafeAreaView>
     );
 }
@@ -463,5 +484,26 @@ const styles = StyleSheet.create({
         left: spacing.lg,
         right: spacing.lg,
         zIndex: 100, // Ensure it's above everything
+    },
+    addExerciseContainer: {
+        alignItems: 'center',
+        marginTop: spacing.sm,
+        marginBottom: spacing.xl,
+    },
+    addExerciseButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderRadius: radius.full,
+        gap: spacing.xs,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
 });

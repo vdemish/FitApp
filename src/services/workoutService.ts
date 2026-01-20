@@ -370,6 +370,52 @@ export async function addExerciseToWorkout(
 }
 
 /**
+ * Добавляет список упражнений в тренировку
+ */
+export async function addExercisesToWorkout(
+    workoutId: string,
+    exerciseIds: string[],
+    restSeconds = 90
+): Promise<WorkoutExercise[]> {
+    if (!exerciseIds.length) return [];
+
+    // 1. Получаем текущий максимальный sort_order
+    const { data: existing } = await supabase
+        .from('workout_exercises')
+        .select('sort_order')
+        .eq('workout_id', workoutId)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+
+    const startOrder = existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
+
+    // 2. Подготавливаем данные для вставки
+    const uniqueIds = [...new Set(exerciseIds)];
+    const workoutExercises = uniqueIds.map((exerciseId, index) => ({
+        workout_id: workoutId,
+        exercise_id: exerciseId,
+        sort_order: startOrder + index,
+        rest_seconds: restSeconds,
+    }));
+
+    // 3. Вставляем
+    const { data, error } = await supabase
+        .from('workout_exercises')
+        .insert(workoutExercises)
+        .select(`
+            *,
+            exercise:exercises(*)
+        `);
+
+    if (error) {
+        console.error('[WorkoutService] Ошибка добавления упражнений:', error.message);
+        throw error;
+    }
+
+    return data || [];
+}
+
+/**
  * Удаляет упражнение из тренировки
  */
 export async function removeExerciseFromWorkout(workoutExerciseId: string): Promise<void> {

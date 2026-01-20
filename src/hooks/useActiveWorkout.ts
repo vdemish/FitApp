@@ -61,6 +61,8 @@ export interface UseActiveWorkoutReturn {
         removeSet: (setId: string) => Promise<void>;
         /** Add an exercise to the workout */
         addExercise: (exerciseId: string) => Promise<void>;
+        /** Add multiple exercises to the workout */
+        addExercises: (exerciseIds: string[]) => Promise<void>;
         /** Remove an exercise from the workout */
         removeExercise: (workoutExerciseId: string) => Promise<void>;
         /** Dismiss the rest timer */
@@ -538,6 +540,44 @@ export function useActiveWorkout(
         [workout]
     );
 
+    const addExercises = useCallback(
+        async (exerciseIds: string[]) => {
+            if (!workout || exerciseIds.length === 0) return;
+
+            // Generate temp IDs and optimistic items
+            // We need exercise details for optimistic UI, but we only have IDs here.
+            // In a real scenario, we might pass the full exercise objects or just wait for the server.
+            // For now, let's defer the UI update to the server response to avoid complexity with missing exercise data (name, icon, etc.)
+            // OR checks if we can pass exercises instead of IDs, but the props say IDs.
+            // Let's implement optimistic update assuming we don't have full details immediately, 
+            // OR essentially wait for the fast response. 
+            // actually, let's just use standard loading state or just wait. 
+            // The user exp might be fine with a small spinner or just appending after a sec.
+
+            // However, to keep it consistent with "addExercise", let's try to just call the service and update state.
+
+            try {
+                const newWorkoutExercises = await workoutService.addExercisesToWorkout(
+                    workout.id,
+                    exerciseIds
+                );
+
+                setWorkout((prev) =>
+                    prev
+                        ? {
+                            ...prev,
+                            exercises: [...(prev.exercises || []), ...newWorkoutExercises],
+                        }
+                        : null
+                );
+            } catch (err) {
+                console.error('[useActiveWorkout] Failed to add exercises:', err);
+                setError(err instanceof Error ? err.message : 'Failed to add exercises');
+            }
+        },
+        [workout]
+    );
+
     const removeExercise = useCallback(
         async (workoutExerciseId: string) => {
             if (!workout?.exercises) return;
@@ -667,6 +707,7 @@ export function useActiveWorkout(
             addSet,
             removeSet,
             addExercise,
+            addExercises,
             removeExercise,
             dismissTimer,
             addRestTime,

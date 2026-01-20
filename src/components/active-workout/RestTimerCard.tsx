@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { GlassCard } from './ui/GlassCard';
+import { GlassCard } from '@/components/ui';
 import { typography, spacing, radius } from '@/theme';
 import { useThemeColors } from '@/hooks';
 
