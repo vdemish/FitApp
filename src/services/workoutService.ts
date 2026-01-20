@@ -146,8 +146,9 @@ export async function createWorkoutFromTemplate(templateId: string): Promise<Wor
         throw workoutError;
     }
 
-    // 3. Copy exercises
+    // 3. Copy exercises and create sets
     if (template.exercises && template.exercises.length > 0) {
+        // Prepare exercises for insertion
         const workoutExercises = template.exercises.map((te: any) => ({
             workout_id: workout.id,
             exercise_id: te.exercise_id,
@@ -155,13 +156,55 @@ export async function createWorkoutFromTemplate(templateId: string): Promise<Wor
             rest_seconds: te.rest_seconds,
         }));
 
-        const { error: exercisesError } = await supabase
+        const { data: createdExercises, error: exercisesError } = await supabase
             .from('workout_exercises')
-            .insert(workoutExercises);
+            .insert(workoutExercises)
+            .select();
 
         if (exercisesError) {
             console.error('[WorkoutService] Ошибка копирования упражнений:', exercisesError.message);
             throw exercisesError;
+        }
+
+        // Create sets for each exercise based on template target_sets
+        if (createdExercises && createdExercises.length > 0) {
+            const setsToCreate: any[] = [];
+
+            createdExercises.forEach((createdExercise) => {
+                // Find original template exercise to get target_sets
+                // We match by exercise_id and sort_order to be precise
+                const templateExercise = template.exercises.find(
+                    (te: any) => te.exercise_id === createdExercise.exercise_id && te.sort_order === createdExercise.sort_order
+                );
+
+                // Determine sets count: use target_sets or default to 1
+                // If target_sets is null/undefined/0/negative, fallback to 1
+                const setsCount = (templateExercise?.target_sets && templateExercise.target_sets > 0)
+                    ? templateExercise.target_sets
+                    : 1;
+
+                // Generate set objects
+                for (let i = 1; i <= setsCount; i++) {
+                    setsToCreate.push({
+                        workout_exercise_id: createdExercise.id,
+                        set_number: i,
+                        weight: 0,
+                        reps: 0,
+                        status: 'pending',
+                    });
+                }
+            });
+
+            if (setsToCreate.length > 0) {
+                const { error: setsError } = await supabase
+                    .from('sets')
+                    .insert(setsToCreate);
+
+                if (setsError) {
+                    console.error('[WorkoutService] Ошибка создания подходов:', setsError.message);
+                    // Non-fatal, but good to know
+                }
+            }
         }
     }
 
@@ -222,13 +265,33 @@ export async function createWorkoutFromExercises(exercises: Exercise[]): Promise
             rest_seconds: 90, // Default rest
         }));
 
-        const { error: exercisesError } = await supabase
+        const { data: newExercises, error: exercisesError } = await supabase
             .from('workout_exercises')
-            .insert(workoutExercises);
+            .insert(workoutExercises)
+            .select();
 
         if (exercisesError) {
             console.error('[WorkoutService] Ошибка добавления упражнений:', exercisesError.message);
             throw exercisesError;
+        }
+
+        // Add default sets if exercises created
+        if (newExercises && newExercises.length > 0) {
+            const defaultSets = newExercises.map(ex => ({
+                workout_exercise_id: ex.id,
+                set_number: 1,
+                weight: 0,
+                reps: 0,
+                status: 'pending',
+            }));
+
+            const { error: setsError } = await supabase
+                .from('sets')
+                .insert(defaultSets);
+
+            if (setsError) {
+                console.error('[WorkoutService] Ошибка создания дефолтных подходов:', setsError.message);
+            }
         }
     }
 
@@ -347,6 +410,7 @@ export async function addExerciseToWorkout(
 
     const nextOrder = existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
 
+    // Вставляем упражнение
     const { data, error } = await supabase
         .from('workout_exercises')
         .insert({
@@ -355,18 +419,45 @@ export async function addExerciseToWorkout(
             sort_order: nextOrder,
             rest_seconds: restSeconds,
         })
-        .select(`
-            *,
-            exercise:exercises(*)
-        `)
-        .single();
+        .select()
+        .single(); // We need basic data first without joins to be safe, or just use ID for set creation
 
     if (error) {
         console.error('[WorkoutService] Ошибка добавления упражнения:', error.message);
         throw error;
     }
 
-    return data;
+    // Add default set
+    const { error: setError } = await supabase
+        .from('sets')
+        .insert({
+            workout_exercise_id: data.id,
+            set_number: 1,
+            weight: 0,
+            reps: 0,
+            status: 'pending',
+        });
+
+    if (setError) {
+        console.error('[WorkoutService] Ошибка создания дефолтного подхода:', setError.message);
+    }
+
+    // Return full data
+    const { data: fullData, error: fetchError } = await supabase
+        .from('workout_exercises')
+        .select(`
+            *,
+            exercise:exercises(*),
+            sets:sets(*)
+        `)
+        .eq('id', data.id)
+        .single();
+
+    if (fetchError) {
+        throw fetchError;
+    }
+
+    return fullData;
 }
 
 /**
@@ -398,21 +489,54 @@ export async function addExercisesToWorkout(
         rest_seconds: restSeconds,
     }));
 
-    // 3. Вставляем
-    const { data, error } = await supabase
+    // 3. Вставляем упражнения
+    const { data: newExercises, error } = await supabase
         .from('workout_exercises')
         .insert(workoutExercises)
-        .select(`
-            *,
-            exercise:exercises(*)
-        `);
+        .select();
 
     if (error) {
         console.error('[WorkoutService] Ошибка добавления упражнений:', error.message);
         throw error;
     }
 
-    return data || [];
+    if (!newExercises || newExercises.length === 0) return [];
+
+    // 4. Добавляем дефолтный подход (Set 1) для каждого упражнения
+    const defaultSets = newExercises.map(ex => ({
+        workout_exercise_id: ex.id,
+        set_number: 1,
+        weight: 0,
+        reps: 0,
+        status: 'pending',
+    }));
+
+    const { error: setsError } = await supabase
+        .from('sets')
+        .insert(defaultSets);
+
+    if (setsError) {
+        console.error('[WorkoutService] Ошибка создания дефолтных подходов:', setsError.message);
+        // Не прерываем выполнение, если подходы не создались, но логируем
+    }
+
+    // 5. Возвращаем полные данные с подходами
+    const { data: result, error: fetchError } = await supabase
+        .from('workout_exercises')
+        .select(`
+            *,
+            exercise:exercises(*),
+            sets:sets(*)
+        `)
+        .in('id', newExercises.map(e => e.id))
+        .order('sort_order', { ascending: true });
+
+    if (fetchError) {
+        console.error('[WorkoutService] Ошибка загрузки созданных упражнений:', fetchError.message);
+        throw fetchError;
+    }
+
+    return result || [];
 }
 
 /**
