@@ -9,6 +9,7 @@ import { GlassCard } from '../ui/GlassCard';
 import { SetRow } from './SetRow';
 import { typography, spacing } from '@/theme';
 import { useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 
 /** Data structure for a single set */
 export interface SetData {
@@ -87,7 +88,10 @@ export function ActiveExerciseCard({
                 </Text>
                 <Pressable
                     testID={`${testID}-menu`}
-                    onPress={onMenuPress}
+                    onPress={() => {
+                        triggerSelection();
+                        onMenuPress?.();
+                    }}
                     style={({ pressed }) => [
                         styles.menuButton,
                         dynamicStyles.menuButton,
@@ -141,7 +145,10 @@ export function ActiveExerciseCard({
             {/* Add Set Button */}
             <Pressable
                 testID={`${testID}-add-set`}
-                onPress={onAddSet}
+                onPress={() => {
+                    triggerSelection();
+                    onAddSet();
+                }}
                 style={({ pressed }) => [
                     styles.addSetButton,
                     dynamicStyles.addSetButton,

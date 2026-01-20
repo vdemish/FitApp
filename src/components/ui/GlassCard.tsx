@@ -27,6 +27,8 @@ interface GlassCardProps {
     style?: ViewStyle;
     /** Обработчик нажатия */
     onPress?: () => void;
+    /** Обработчик нажатия (начало) */
+    onPressIn?: () => void;
     /** ID для тестирования */
     testID?: string;
 }
@@ -45,6 +47,7 @@ export function GlassCard({
     accent = 'none',
     style,
     onPress,
+    onPressIn,
     testID,
 }: GlassCardProps) {
     const themeColors = useThemeColors();
@@ -99,6 +102,7 @@ export function GlassCard({
                     pressed && styles.pressed,
                 ]}
                 onPress={onPress}
+                onPressIn={onPressIn}
             >
                 {children}
             </Pressable>

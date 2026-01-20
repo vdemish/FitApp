@@ -10,6 +10,7 @@ import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components';
 import { useExercises, useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise, MuscleGroup } from '@/types';
 
@@ -56,7 +57,10 @@ export function LibraryScreen() {
         <GlassCard
             key={exercise.id}
             style={styles.exerciseCard}
-            onPress={() => console.log('Selected:', exercise.name)}
+            onPress={() => {
+                triggerSelection();
+                console.log('Selected:', exercise.name);
+            }}
         >
             <View style={[styles.exerciseIcon, dynamicStyles.exerciseIcon, highlighted && styles.exerciseIconHighlighted]}>
                 <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
@@ -124,7 +128,10 @@ export function LibraryScreen() {
                         variant="icon"
                         size="sm"
                         style={styles.addButton}
-                        onPress={() => console.log('Add exercise')}
+                        onPress={() => {
+                            triggerSelection();
+                            console.log('Add exercise');
+                        }}
                         testID="add-exercise-button"
                     >
                         <Text style={styles.addIcon}>+</Text>
@@ -152,7 +159,10 @@ export function LibraryScreen() {
                     <CategoryPill
                         label="All"
                         active={selectedMuscleGroupId === null}
-                        onPress={() => setSelectedMuscleGroupId(null)}
+                        onPress={() => {
+                            triggerSelection();
+                            setSelectedMuscleGroupId(null);
+                        }}
                         testID="category-all"
                     />
                     {muscleGroups.map(group => (
@@ -160,7 +170,10 @@ export function LibraryScreen() {
                             key={group.id}
                             label={group.name}
                             active={selectedMuscleGroupId === group.id}
-                            onPress={() => setSelectedMuscleGroupId(group.id)}
+                            onPress={() => {
+                                triggerSelection();
+                                setSelectedMuscleGroupId(group.id);
+                            }}
                             testID={`category-${group.name.toLowerCase().replace(/\s/g, '-')}`}
                         />
                     ))}

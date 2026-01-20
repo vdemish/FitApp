@@ -19,6 +19,7 @@ import { GlassCard, Button, Heading, Label, Input } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components/CategoryPill';
 import { useWorkoutHistory, useWorkoutTemplates, useExercises, useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise, Workout, WorkoutTemplate } from '@/types';
 
@@ -162,7 +163,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                     <View style={[styles.handleBar, dynamicStyles.handleBar]} />
                     <View style={styles.headerContent}>
                         <Heading level={2}>Start Workout</Heading>
-                        <Pressable onPress={onClose} style={[styles.closeButton, dynamicStyles.closeButton]}>
+                        <Pressable onPress={() => { triggerSelection(); onClose(); }} style={[styles.closeButton, dynamicStyles.closeButton]}>
                             <Text style={[styles.closeIcon, dynamicStyles.closeIcon]}>✕</Text>
                         </Pressable>
                     </View>
@@ -183,6 +184,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                         key={workout.id}
                                         style={styles.historyCard}
                                         onPress={() => handleStartFromHistory(workout)}
+                                        onPressIn={() => triggerSelection()}
                                     >
                                         <Text style={styles.historyEmoji}>📊</Text>
                                         <Heading level={3} style={styles.historyTitle}>{workout.name}</Heading>
@@ -206,6 +208,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                         key={template.id}
                                         style={styles.templateCard}
                                         onPress={() => handleStartFromTemplate(template)}
+                                        onPressIn={() => triggerSelection()}
                                     >
                                         <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
                                         <UIText variant="body-sm" style={styles.templateName}>{template.name}</UIText>
@@ -245,14 +248,14 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                             <CategoryPill
                                 label="All"
                                 active={selectedMuscleGroupId === null}
-                                onPress={() => setSelectedMuscleGroupId(null)}
+                                onPress={() => { triggerSelection(); setSelectedMuscleGroupId(null); }}
                             />
                             {muscleGroups.map(group => (
                                 <CategoryPill
                                     key={group.id}
                                     label={group.name}
                                     active={selectedMuscleGroupId === group.id}
-                                    onPress={() => setSelectedMuscleGroupId(group.id)}
+                                    onPress={() => { triggerSelection(); setSelectedMuscleGroupId(group.id); }}
                                 />
                             ))}
                         </ScrollView>
@@ -272,6 +275,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                                 ...(selected ? styles.exerciseCardSelected : {}),
                                             }}
                                             onPress={() => toggleExerciseSelection(exercise)}
+                                            onPressIn={() => triggerSelection()}
                                         >
                                             <View style={[
                                                 styles.exerciseIcon,
@@ -307,7 +311,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                             variant="primary"
                             size="lg"
                             glow
-                            onPress={handleStartWithExercises}
+                            onPress={() => { triggerSelection(); handleStartWithExercises(); }}
                             style={styles.floatingButton}
                         >
                             {`START (${selectedExercises.length} exercises)`}

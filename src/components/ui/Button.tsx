@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, radius } from '@/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'icon';
@@ -136,7 +137,12 @@ export function Button({
                 ...containerStyles,
                 pressed && !disabled && styles.pressed,
             ]}
-            onPress={onPress}
+            onPress={(e) => {
+                if (!disabled && !loading && onPress) {
+                    triggerSelection();
+                    onPress();
+                }
+            }}
             disabled={disabled || loading}
         >
             {loading ? (

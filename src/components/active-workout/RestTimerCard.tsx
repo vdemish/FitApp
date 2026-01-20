@@ -7,6 +7,7 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { GlassCard } from '@/components/ui';
 import { typography, spacing, radius } from '@/theme';
 import { useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 
 export interface RestTimerCardProps {
     /** Time in seconds */
@@ -89,7 +90,10 @@ export function RestTimerCard({
                             dynamicStyles.button,
                             pressed && styles.buttonPressed,
                         ]}
-                        onPress={onSubtract10}
+                        onPress={() => {
+                            triggerSelection();
+                            onSubtract10();
+                        }}
                     >
                         <Text style={[styles.buttonIcon, dynamicStyles.buttonIcon]}>-10</Text>
                     </Pressable>
@@ -101,7 +105,10 @@ export function RestTimerCard({
                             dynamicStyles.primaryButton,
                             pressed && styles.buttonPressed,
                         ]}
-                        onPress={onAdd30}
+                        onPress={() => {
+                            triggerSelection();
+                            onAdd30();
+                        }}
                     >
                         <Text style={[styles.buttonIcon, dynamicStyles.primaryIcon]}>+30</Text>
                     </Pressable>
@@ -113,7 +120,10 @@ export function RestTimerCard({
                             dynamicStyles.skipButton,
                             pressed && styles.buttonPressed,
                         ]}
-                        onPress={onSkip}
+                        onPress={() => {
+                            triggerSelection();
+                            onSkip();
+                        }}
                     >
                         <Text style={[styles.buttonIcon, dynamicStyles.skipText]}>Skip</Text>
                     </Pressable>

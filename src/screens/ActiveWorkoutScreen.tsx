@@ -24,6 +24,7 @@ import { ActiveExerciseCard, RestTimerCard, AddExerciseModal } from '@/component
 import { Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useActiveWorkout, useThemeColors } from '@/hooks';
+import { triggerTimerTick, triggerSuccess, triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
 
@@ -135,6 +136,14 @@ export function ActiveWorkoutScreen() {
 
     // Timer interval logic
     const [remainingTime, setRemainingTime] = React.useState(0);
+    const lastHapticTimeRef = React.useRef<number>(-1);
+
+    // Reset haptic ref when timer starts
+    useEffect(() => {
+        if (timerState.isActive) {
+            lastHapticTimeRef.current = -1;
+        }
+    }, [timerState.isActive, timerState.lastCompletedSetTimestamp]);
 
     // Update remaining time when timer state changes or on interval
     useEffect(() => {
@@ -147,6 +156,16 @@ export function ActiveWorkoutScreen() {
             const elapsed = Math.floor((Date.now() - timerState.lastCompletedSetTimestamp!) / 1000);
             const remaining = Math.max(0, timerState.restSeconds - elapsed);
             setRemainingTime(remaining);
+
+            // Haptic Feedback
+            if (remaining !== lastHapticTimeRef.current) {
+                if (remaining <= 5 && remaining > 0) {
+                    triggerTimerTick();
+                } else if (remaining === 0) {
+                    triggerSuccess();
+                }
+                lastHapticTimeRef.current = remaining;
+            }
 
             // Auto-dismiss if 0
             if (remaining === 0) actions.dismissTimer();
@@ -219,7 +238,10 @@ export function ActiveWorkoutScreen() {
                 <View style={styles.header}>
                     <Pressable
                         style={styles.headerButton}
-                        onPress={handleCancel}
+                        onPress={() => {
+                            triggerSelection();
+                            handleCancel();
+                        }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Text style={[styles.cancelButtonText, dynamicStyles.cancelText]}>
@@ -239,7 +261,10 @@ export function ActiveWorkoutScreen() {
 
                     <Pressable
                         style={styles.headerButton}
-                        onPress={handleFinish}
+                        onPress={() => {
+                            triggerSelection();
+                            handleFinish();
+                        }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Text style={styles.finishButtonText}>Finish</Text>
@@ -292,7 +317,10 @@ export function ActiveWorkoutScreen() {
                     <View style={styles.addExerciseContainer}>
                         <Pressable
                             style={[styles.addExerciseButton, dynamicStyles.addExerciseButton]}
-                            onPress={() => setAddExerciseModalVisible(true)}
+                            onPress={() => {
+                                triggerSelection();
+                                setAddExerciseModalVisible(true);
+                            }}
                         >
                             <Ionicons name="add" size={24} color={themeColors.primary} />
                             <UIText variant="body" style={{ color: themeColors.primary, fontWeight: '600' }}>

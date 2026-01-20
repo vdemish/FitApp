@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useWorkoutHistory, useUserStats, useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Workout } from '@/types';
 
@@ -217,6 +218,7 @@ export function HistoryScreen() {
                                 accent="primary"
                                 style={styles.logCard}
                                 onPress={() => console.log('View log:', workout.id)}
+                                onPressIn={() => triggerSelection()}
                             >
                                 <View style={styles.logIcon}>
                                     <Text style={styles.logEmoji}>💪</Text>

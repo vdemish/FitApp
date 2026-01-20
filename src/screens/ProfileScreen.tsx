@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useUserStats, useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
@@ -215,7 +216,10 @@ export function ProfileScreen() {
                         styles.signOutButton,
                         pressed && styles.signOutButtonPressed,
                     ]}
-                    onPress={handleSignOut}
+                    onPress={() => {
+                        triggerSelection();
+                        handleSignOut();
+                    }}
                     testID="sign-out-button"
                 >
                     <Text style={styles.signOutText}>Выйти из аккаунта</Text>
@@ -254,7 +258,10 @@ function SettingsRow({ icon, label, value, onPress }: SettingsRowProps) {
                 styles.settingsRow,
                 pressed && dynamicStyles.pressed,
             ]}
-            onPress={onPress}
+            onPress={() => {
+                triggerSelection();
+                onPress?.();
+            }}
         >
             <View style={styles.settingsRowLeft}>
                 <Text style={styles.settingsIcon}>{icon}</Text>

@@ -7,6 +7,7 @@ import React from 'react';
 import { Pressable, View, StyleSheet, Platform } from 'react-native';
 import { colors, sizes } from '@/theme';
 import { useThemeColors } from '@/hooks';
+import { triggerSelection } from '@/utils/haptics';
 
 interface CheckboxProps {
     /** Whether the checkbox is checked */
@@ -25,7 +26,10 @@ export function Checkbox({ checked, onToggle, testID, disabled = false }: Checkb
     return (
         <Pressable
             testID={testID}
-            onPress={disabled ? undefined : onToggle}
+            onPress={disabled ? undefined : () => {
+                triggerSelection();
+                onToggle();
+            }}
             style={({ pressed }) => [
                 styles.container,
                 { borderColor: checked ? colors.primary.DEFAULT : themeColors.border },
