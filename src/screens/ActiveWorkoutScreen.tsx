@@ -110,9 +110,9 @@ export function ActiveWorkoutScreen() {
         return exercises.find(ex => ex.sets.some(s => !s.isCompleted))?.id;
     }, [exercises]);
 
-    // Handle set change (weight or reps)
+    // Handle set change (weight, reps, distance, or duration)
     const handleSetChange = useCallback(
-        (setId: string, field: 'weight' | 'reps', value: number) => {
+        (setId: string, field: 'weight' | 'reps' | 'distance' | 'durationSeconds', value: number) => {
             actions.updateSet(setId, field, value);
         },
         [actions]
@@ -315,6 +315,7 @@ export function ActiveWorkoutScreen() {
                                 >
                                     <ActiveExerciseCard
                                         exerciseName={item.name}
+                                        trackingType={item.trackingType}
                                         sets={item.sets}
                                         onAddSet={() => handleAddSet(item.workoutExerciseId)}
                                         onSetChange={(setId, field, value) =>

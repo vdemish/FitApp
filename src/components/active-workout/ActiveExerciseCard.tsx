@@ -10,12 +10,15 @@ import { SetRow } from './SetRow';
 import { typography, spacing } from '@/theme';
 import { useThemeColors } from '@/hooks';
 import { triggerSelection } from '@/utils/haptics';
+import { ExerciseTrackingType, getSetInputFields } from '@/types';
 
 /** Data structure for a single set */
 export interface SetData {
     id: string;
     weight: number;
     reps: number;
+    distance?: number;
+    durationSeconds?: number;
     isCompleted: boolean;
     previousBest?: string;
 }
@@ -23,6 +26,8 @@ export interface SetData {
 interface ActiveExerciseCardProps {
     /** Name of the exercise */
     exerciseName: string;
+    /** Tracking type for the exercise */
+    trackingType?: ExerciseTrackingType;
     /** Array of sets */
     sets: SetData[];
     /** Callback to add a new set */
@@ -30,13 +35,15 @@ interface ActiveExerciseCardProps {
     /** Callback to remove a set */
     onRemoveSet?: (setId: string) => void;
     /** Callback when set values change */
-    onSetChange?: (setId: string, field: 'weight' | 'reps', value: number) => void;
+    onSetChange?: (setId: string, field: 'weight' | 'reps' | 'distance' | 'durationSeconds', value: number) => void;
     /** Callback when set completion is toggled */
     onToggleComplete?: (setId: string) => void;
     /** Callback for menu button press */
     onMenuPress?: () => void;
     /** Weight unit label */
     weightUnit?: string;
+    /** Distance unit label */
+    distanceUnit?: string;
     /** ID for testing */
     testID?: string;
     /** Whether the rest timer is currently active */
@@ -47,6 +54,7 @@ interface ActiveExerciseCardProps {
 
 export function ActiveExerciseCard({
     exerciseName,
+    trackingType = 'weight_reps',
     sets,
     onAddSet,
     onRemoveSet,
@@ -54,6 +62,7 @@ export function ActiveExerciseCard({
     onToggleComplete,
     onMenuPress,
     weightUnit = 'kg',
+    distanceUnit = 'km',
     testID,
     isResting = false,
     isActiveExercise = false,
@@ -112,12 +121,31 @@ export function ActiveExerciseCard({
             <View style={styles.columnHeaders}>
                 <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>SET</Text>
                 <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>PREVIOUS</Text>
-                <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
-                    {weightUnit.toUpperCase()}
-                </Text>
-                <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
-                    REPS
-                </Text>
+                {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight') && (
+                    <>
+                        <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
+                            {trackingType === 'weighted_bodyweight' ? `+${weightUnit.toUpperCase()}` : weightUnit.toUpperCase()}
+                        </Text>
+                        <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
+                            REPS
+                        </Text>
+                    </>
+                )}
+                {trackingType === 'duration' && (
+                    <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
+                        TIME
+                    </Text>
+                )}
+                {trackingType === 'distance_duration' && (
+                    <>
+                        <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
+                            {distanceUnit.toUpperCase()}
+                        </Text>
+                        <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
+                            TIME
+                        </Text>
+                    </>
+                )}
                 <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>✓</Text>
             </View>
 
@@ -127,14 +155,20 @@ export function ActiveExerciseCard({
                     <SetRow
                         key={set.id}
                         setNumber={index + 1}
+                        trackingType={trackingType}
                         weight={set.weight}
                         reps={set.reps}
+                        distance={set.distance}
+                        durationSeconds={set.durationSeconds}
                         isCompleted={set.isCompleted}
                         isActive={index === activeSetIndex}
                         previousBest={set.previousBest}
                         weightUnit={weightUnit}
+                        distanceUnit={distanceUnit}
                         onWeightChange={(value) => onSetChange?.(set.id, 'weight', value)}
                         onRepsChange={(value) => onSetChange?.(set.id, 'reps', value)}
+                        onDistanceChange={(value) => onSetChange?.(set.id, 'distance', value)}
+                        onDurationChange={(value) => onSetChange?.(set.id, 'durationSeconds', value)}
                         onToggleComplete={() => onToggleComplete?.(set.id)}
                         testID={`${testID}-set-${index + 1}`}
                         disabled={isResting}

@@ -42,3 +42,21 @@ export const getRepsItems = (): PickerItem[] => {
     }
     return items;
 };
+
+/**
+ * Generates distance values for cardio.
+ * Default: 0 to 50 km, step 0.1
+ */
+export const getDistanceItems = (): PickerItem[] => {
+    const items: PickerItem[] = [];
+    const maxDistance = 50;
+    const step = 0.1;
+
+    for (let d = 0; d <= maxDistance; d += step) {
+        items.push({
+            label: d.toFixed(1),
+            value: d.toFixed(1),
+        });
+    }
+    return items;
+};

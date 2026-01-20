@@ -1,18 +1,26 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { WheelInput } from './WheelInput';
+import { TimeInput } from './TimeInput';
 import { Checkbox } from './Checkbox';
-import { colors, typography, spacing } from '@/theme';
+import { typography, spacing } from '@/theme';
 import { useThemeColors, useIsDarkTheme } from '@/hooks';
-import { getWeightItems, getRepsItems } from './pickerData';
+import { getWeightItems, getRepsItems, getDistanceItems } from './pickerData';
+import { ExerciseTrackingType, getSetInputFields } from '@/types';
 
 interface SetRowProps {
     /** Set number (1-based) */
     setNumber: number;
+    /** Exercise tracking type */
+    trackingType: ExerciseTrackingType;
     /** Current weight value */
     weight: number;
     /** Current reps value */
     reps: number;
+    /** Current distance value (for cardio) */
+    distance?: number;
+    /** Current duration in seconds (for timed exercises) */
+    durationSeconds?: number;
     /** Whether the set is completed */
     isCompleted: boolean;
     /** Whether this is the current active set */
@@ -23,32 +31,47 @@ interface SetRowProps {
     onWeightChange: (value: number) => void;
     /** Callback when reps changes */
     onRepsChange: (value: number) => void;
+    /** Callback when distance changes */
+    onDistanceChange?: (value: number) => void;
+    /** Callback when duration changes */
+    onDurationChange?: (value: number) => void;
     /** Callback when completion is toggled */
     onToggleComplete: () => void;
     /** Previous best (e.g., "50kg × 12") */
     previousBest?: string;
     /** Weight unit label */
     weightUnit?: string;
+    /** Distance unit label */
+    distanceUnit?: string;
     /** ID for testing */
     testID?: string;
 }
 
 export function SetRow({
     setNumber,
+    trackingType,
     weight,
     reps,
+    distance = 0,
+    durationSeconds = 0,
     isCompleted,
     isActive = false,
     disabled = false,
     onWeightChange,
     onRepsChange,
+    onDistanceChange,
+    onDurationChange,
     onToggleComplete,
     previousBest,
     weightUnit = 'kg',
+    distanceUnit = 'km',
     testID,
 }: SetRowProps) {
     const themeColors = useThemeColors();
     const isDark = useIsDarkTheme();
+
+    // Get input field configuration based on tracking type
+    const inputFields = getSetInputFields(trackingType);
 
     // Animation value for the pulse effect
     const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -56,6 +79,12 @@ export function SetRow({
     // Memoize picker items to avoid regenerating on every render
     const weightItems = useMemo(() => getWeightItems(), []);
     const repsItems = useMemo(() => getRepsItems(), []);
+    const distanceItems = useMemo(() => getDistanceItems(), []);
+
+    // Determine weight label based on tracking type
+    const weightLabel = trackingType === 'weighted_bodyweight'
+        ? `+${weightUnit.toUpperCase()}`
+        : weightUnit.toUpperCase();
 
     // Setup pulse animation
     useEffect(() => {
@@ -65,7 +94,7 @@ export function SetRow({
                     Animated.timing(pulseAnim, {
                         toValue: 1,
                         duration: 1500,
-                        useNativeDriver: false, // false because we animate colors/shadows
+                        useNativeDriver: false,
                     }),
                     Animated.timing(pulseAnim, {
                         toValue: 0,
@@ -85,8 +114,8 @@ export function SetRow({
     const borderColor = pulseAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [
-            themeColors.surface, // Start with surface color (invisible border effectively)
-            isDark ? themeColors.primary : themeColors.primary, // Pulse to primary
+            themeColors.surface,
+            themeColors.primary,
         ],
     });
 
@@ -103,10 +132,108 @@ export function SetRow({
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: isDark ? shadowOpacity : 0,
             shadowRadius: 10,
-            elevation: 4, // Android elevation
+            elevation: 4,
             borderWidth: 1,
         }
         : {};
+
+    // Render inputs based on tracking type
+    const renderInputs = () => {
+        switch (trackingType) {
+            case 'weight_reps':
+                return (
+                    <>
+                        <View style={styles.inputWrapper}>
+                            <WheelInput
+                                value={weight}
+                                onChange={onWeightChange}
+                                items={weightItems}
+                                label={weightLabel}
+                                title="Select Weight"
+                                testID={`${testID}-weight`}
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <WheelInput
+                                value={reps}
+                                onChange={onRepsChange}
+                                items={repsItems}
+                                label="REPS"
+                                title="Select Reps"
+                                testID={`${testID}-reps`}
+                            />
+                        </View>
+                    </>
+                );
+
+            case 'weighted_bodyweight':
+                return (
+                    <>
+                        <View style={styles.inputWrapper}>
+                            <WheelInput
+                                value={weight}
+                                onChange={onWeightChange}
+                                items={weightItems}
+                                label={weightLabel}
+                                title="Added Weight"
+                                testID={`${testID}-weight`}
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <WheelInput
+                                value={reps}
+                                onChange={onRepsChange}
+                                items={repsItems}
+                                label="REPS"
+                                title="Select Reps"
+                                testID={`${testID}-reps`}
+                            />
+                        </View>
+                    </>
+                );
+
+            case 'duration':
+                return (
+                    <View style={styles.inputWrapperWide}>
+                        <TimeInput
+                            value={durationSeconds}
+                            onChange={onDurationChange || (() => { })}
+                            label="TIME"
+                            title="Select Duration"
+                            testID={`${testID}-duration`}
+                        />
+                    </View>
+                );
+
+            case 'distance_duration':
+                return (
+                    <>
+                        <View style={styles.inputWrapper}>
+                            <WheelInput
+                                value={distance}
+                                onChange={onDistanceChange || (() => { })}
+                                items={distanceItems}
+                                label={distanceUnit.toUpperCase()}
+                                title="Select Distance"
+                                testID={`${testID}-distance`}
+                            />
+                        </View>
+                        <View style={styles.inputWrapper}>
+                            <TimeInput
+                                value={durationSeconds}
+                                onChange={onDurationChange || (() => { })}
+                                label="TIME"
+                                title="Select Duration"
+                                testID={`${testID}-duration`}
+                            />
+                        </View>
+                    </>
+                );
+
+            default:
+                return null;
+        }
+    };
 
     return (
         <Animated.View
@@ -151,29 +278,8 @@ export function SetRow({
                 </Text>
             )}
 
-            {/* Weight Input */}
-            <View style={styles.inputWrapper}>
-                <WheelInput
-                    value={weight}
-                    onChange={onWeightChange}
-                    items={weightItems}
-                    label={weightUnit.toUpperCase()}
-                    title="Select Weight"
-                    testID={`${testID}-weight`}
-                />
-            </View>
-
-            {/* Reps Input */}
-            <View style={styles.inputWrapper}>
-                <WheelInput
-                    value={reps}
-                    onChange={onRepsChange}
-                    items={repsItems}
-                    label="REPS"
-                    title="Select Reps"
-                    testID={`${testID}-reps`}
-                />
-            </View>
+            {/* Dynamic Inputs */}
+            {renderInputs()}
 
             {/* Completion Checkbox */}
             <Checkbox
@@ -194,7 +300,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         gap: spacing.xs,
         borderRadius: 12,
-        // Default border width 0 to avoid layout shift when active adds border
         borderWidth: 1,
         borderColor: 'transparent',
     },
@@ -220,8 +325,10 @@ const styles = StyleSheet.create({
     },
     inputWrapper: {
         flex: 1,
-        // Ensure inputs don't stretch too wide but fill space evenly
         maxWidth: 120,
     },
+    inputWrapperWide: {
+        flex: 2,
+        maxWidth: 200,
+    },
 });
-

@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, Exercise } from '@/types';
+import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, Exercise, ExerciseTrackingType } from '@/types';
 import * as workoutService from '@/services/workoutService';
 import type { SetData } from '@/components/active-workout';
 
@@ -33,6 +33,7 @@ export interface ActiveExercise {
     workoutExerciseId: string;
     name: string;
     icon: string;
+    trackingType: ExerciseTrackingType;
     restSeconds: number;
     sets: SetData[];
 }
@@ -51,8 +52,8 @@ export interface UseActiveWorkoutReturn {
     timerState: TimerState;
     /** Action methods */
     actions: {
-        /** Update a set's weight or reps (debounced save) */
-        updateSet: (setId: string, field: 'weight' | 'reps', value: number) => void;
+        /** Update a set's weight, reps, distance, or duration (debounced save) */
+        updateSet: (setId: string, field: 'weight' | 'reps' | 'distance' | 'durationSeconds', value: number) => void;
         /** Toggle set completion (immediate save) */
         toggleSetComplete: (setId: string) => void;
         /** Add a new set to an exercise */
@@ -150,11 +151,14 @@ function transformToActiveExercises(workout: Workout | null): ActiveExercise[] {
         workoutExerciseId: we.id,
         name: we.exercise?.name || 'Unknown Exercise',
         icon: we.exercise?.icon || 'fitness_center',
+        trackingType: we.exercise?.tracking_type || 'weight_reps',
         restSeconds: we.rest_seconds,
         sets: (we.sets || []).map((set: WorkoutSet) => ({
             id: set.id,
             weight: set.weight,
             reps: set.reps,
+            distance: set.distance,
+            durationSeconds: set.duration_seconds,
             isCompleted: set.status === 'completed',
             previousBest: undefined, // TODO: Load from exercise history
         })),
@@ -287,7 +291,7 @@ export function useActiveWorkout(
     // ========================================================================
 
     const updateSet = useCallback(
-        (setId: string, field: 'weight' | 'reps', value: number) => {
+        (setId: string, field: 'weight' | 'reps' | 'distance' | 'durationSeconds', value: number) => {
             // Store previous state for rollback
             previousWorkoutState.current = workout;
 

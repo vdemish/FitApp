@@ -30,12 +30,20 @@ export interface MuscleGroup {
 
 export type ExerciseType = 'Compound' | 'Isolation' | 'Heavy' | 'Stretch';
 
+/** Tracking type for exercises (matches DB ENUM) */
+export type ExerciseTrackingType =
+    | 'weight_reps'          // Standard gym exercises (Bench Press)
+    | 'weighted_bodyweight'  // Bodyweight + optional weight (Dips, Pull-ups)
+    | 'duration'             // Time-based static exercises (Plank)
+    | 'distance_duration';   // Cardio (Running)
+
 export interface Exercise {
     id: string;
     name: string;
     muscle_group_id: string;
-    muscle_group?: MuscleGroup; // Присоединённые данные
+    muscle_group?: MuscleGroup; // Joined data
     exercise_type: ExerciseType;
+    tracking_type: ExerciseTrackingType;
     icon: string;
     color: string | null;
     instructions: string | null;
@@ -113,8 +121,10 @@ export interface Set {
     id: string;
     workout_exercise_id: string;
     set_number: number;
-    weight: number; // В kg
+    weight: number; // In kg
     reps: number;
+    distance?: number; // For cardio (distance_duration)
+    duration_seconds?: number; // For duration & distance_duration types
     is_warmup: boolean;
     is_dropset: boolean;
     status: SetStatus;
@@ -154,8 +164,36 @@ export function convertToKg(weight: number, unit: UnitPreference): number {
     return unit === 'lbs' ? weight / KG_TO_LBS : weight;
 }
 
-/** Форматирует вес с единицей измерения */
+/** Formats weight with unit */
 export function formatWeight(weightKg: number, unit: UnitPreference): string {
     const converted = convertWeight(weightKg, unit);
     return `${converted.toFixed(1)} ${unit}`;
+}
+
+// ============================================================================
+// SET INPUT FIELDS HELPER
+// ============================================================================
+
+/** Configuration for which inputs to show based on tracking type */
+export interface SetInputFieldsConfig {
+    weight: boolean;
+    reps: boolean;
+    distance: boolean;
+    duration: boolean;
+}
+
+/** Returns config for which inputs to show for a given exercise tracking type */
+export function getSetInputFields(type: ExerciseTrackingType): SetInputFieldsConfig {
+    switch (type) {
+        case 'weight_reps':
+            return { weight: true, reps: true, distance: false, duration: false };
+        case 'weighted_bodyweight':
+            return { weight: true, reps: true, distance: false, duration: false };
+        case 'duration':
+            return { weight: false, reps: false, distance: false, duration: true };
+        case 'distance_duration':
+            return { weight: false, reps: false, distance: true, duration: true };
+        default:
+            return { weight: true, reps: true, distance: false, duration: false };
+    }
 }
