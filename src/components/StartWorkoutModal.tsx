@@ -35,12 +35,19 @@ interface StartWorkoutModalProps {
 export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWorkoutModalProps) {
     const themeColors = useThemeColors();
     const { workouts: historyWorkouts, loading: historyLoading } = useWorkoutHistory(2);
-    const { templates, loading: templatesLoading } = useWorkoutTemplates(50); // Fetch more templates for scrolling
+    const { templates, loading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more templates for scrolling
     const { exercises, muscleGroups, loading: exercisesLoading } = useExercises();
 
     const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
+
+    // Refetch data when modal opens
+    React.useEffect(() => {
+        if (visible) {
+            refetchTemplates();
+        }
+    }, [visible, refetchTemplates]);
 
     // Dynamic styles
     const dynamicStyles = useMemo(() => ({

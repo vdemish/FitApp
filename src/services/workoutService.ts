@@ -75,6 +75,33 @@ export async function getWorkoutHistory(limit = 10): Promise<Workout[]> {
 }
 
 /**
+ * Получает полную информацию о тренировке по ID (включая подходы)
+ */
+export async function getWorkoutDetails(workoutId: string): Promise<Workout | null> {
+    const { data, error } = await supabase
+        .from('workouts')
+        .select(`
+            *,
+            exercises:workout_exercises(
+                *,
+                exercise:exercises(*),
+                sets:sets(*)
+            )
+        `)
+        .eq('id', workoutId)
+        .order('sort_order', { foreignTable: 'workout_exercises', ascending: true })
+        .order('set_number', { foreignTable: 'workout_exercises.sets', ascending: true })
+        .single();
+
+    if (error) {
+        console.error('[WorkoutService] Ошибка загрузки деталей тренировки:', error.message);
+        return null;
+    }
+
+    return data;
+}
+
+/**
  * Получает шаблоны тренировок
  */
 export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]> {

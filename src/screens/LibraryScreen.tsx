@@ -295,8 +295,7 @@ export function LibraryScreen() {
                                     style={styles.templateCard}
                                     onPress={() => {
                                         triggerSelection();
-                                        // TODO: Open template details or start workout
-                                        console.log('Template pressed:', template.name);
+                                        navigation.navigate('ActiveWorkout', { templateId: template.id });
                                     }}
                                 >
                                     <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>

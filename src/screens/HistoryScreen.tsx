@@ -3,10 +3,10 @@
  * Connected to real database via useWorkoutHistory and useUserStats hooks
  */
 
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassCard, Button, Heading, Label } from '@/components/ui';
+import { GlassCard, Button, Heading, Label, HistoryWorkoutModal } from '@/components';
 import { Text as UIText } from '@/components/ui/Text';
 import { useWorkoutHistory, useUserStats, useThemeColors } from '@/hooks';
 import { triggerSelection } from '@/utils/haptics';
@@ -19,6 +19,7 @@ export function HistoryScreen() {
     const { workouts, loading: historyLoading } = useWorkoutHistory(10);
     const { stats, totalVolume, volumeData, loading: statsLoading } = useUserStats(30);
     const themeColors = useThemeColors();
+    const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
     const loading = historyLoading || statsLoading;
 
@@ -217,7 +218,10 @@ export function HistoryScreen() {
                                 key={workout.id}
                                 accent="primary"
                                 style={styles.logCard}
-                                onPress={() => console.log('View log:', workout.id)}
+                                onPress={() => {
+                                    triggerSelection();
+                                    setSelectedWorkoutId(workout.id);
+                                }}
                                 onPressIn={() => triggerSelection()}
                             >
                                 <View style={styles.logIcon}>
@@ -235,6 +239,12 @@ export function HistoryScreen() {
                     )}
                 </View>
             </ScrollView>
+
+            <HistoryWorkoutModal
+                visible={!!selectedWorkoutId}
+                workoutId={selectedWorkoutId}
+                onClose={() => setSelectedWorkoutId(null)}
+            />
         </SafeAreaView>
     );
 }
