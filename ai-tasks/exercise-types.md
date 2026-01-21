@@ -1,20 +1,19 @@
-Context: We need to render the Set Input Row dynamically based on the exercise type.
+Context: Active Workout Screen. We are improving the UX for data entry to make it faster and easier during workouts.
 
-Task: Refactor the `SetRow` component in the `ActiveWorkoutScreen`.
+Task: Refactor the input mechanism to replace "Wheel/Picker" inputs with direct keyboard text inputs.
+
+Problem: The current `WheelInput` is too slow for changing values significantly (e.g., jumping from 20kg to 60kg) and difficult to use with sweaty or shaky hands.
 
 Requirements:
-1. Logic:
-   - Receive the `exercise` object (specifically its `tracking_type`) as a prop.
-   - Use the helper function (from Step 2) to determine which input fields to render.
+1. Remove `WheelInput`: Completely remove the usage of wheel/picker components for data entry.
 
-2. Visuals (Tailwind/NativeWind):
-   - Case 'weight_reps': Show standard Weight and Reps inputs.
-   - Case 'weighted_bodyweight': Show Weight input with a placeholder "+0" (indicating added weight) and Reps input.
-   - Case 'duration': Hide Weight/Reps. Show a Time Input (MM:SS) that saves as total seconds.
-   - Case 'distance_duration': Show Distance input (km/mi) and Time Input.
+2. Implement Numeric Text Inputs:
+   - Replace the old inputs with standard text input fields for different exercise types.
+   - Ensure the correct keyboard type is used (numeric or decimal pad) for each metric.
 
-3. Time Input Logic:
-   - Since we store duration as seconds, create a small utility or component to mask the input as "MM:SS" for user friendliness, but convert to integers for the state.
+3. "Select All on Focus" Behavior (Critical):
+   - Configure the inputs so that when a user taps a field, the existing value is automatically selected/highlighted.
+   - The UX goal is that typing a new number should immediately overwrite the old value. The user should NOT have to manually backspace or delete the previous number.
 
-Output:
-- The code for the refactored `SetRow` component handling these conditional renders.
+4. General:
+   - Ensure this logic applies consistently across all the metric types mentioned above.

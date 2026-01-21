@@ -1,11 +1,10 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { WheelInput } from './WheelInput';
+import { NumericInput } from './NumericInput';
 import { TimeInput } from './TimeInput';
 import { Checkbox } from './Checkbox';
 import { typography, spacing } from '@/theme';
 import { useThemeColors, useIsDarkTheme } from '@/hooks';
-import { getWeightItems, getRepsItems, getDistanceItems } from './pickerData';
 import { ExerciseTrackingType, getSetInputFields } from '@/types';
 
 interface SetRowProps {
@@ -76,11 +75,6 @@ export function SetRow({
     // Animation value for the pulse effect
     const pulseAnim = useRef(new Animated.Value(0)).current;
 
-    // Memoize picker items to avoid regenerating on every render
-    const weightItems = useMemo(() => getWeightItems(), []);
-    const repsItems = useMemo(() => getRepsItems(), []);
-    const distanceItems = useMemo(() => getDistanceItems(), []);
-
     // Determine weight label based on tracking type
     const weightLabel = trackingType === 'weighted_bodyweight'
         ? `+${weightUnit.toUpperCase()}`
@@ -144,22 +138,22 @@ export function SetRow({
                 return (
                     <>
                         <View style={styles.inputWrapper}>
-                            <WheelInput
+                            <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
-                                items={weightItems}
                                 label={weightLabel}
-                                title="Select Weight"
+                                allowDecimals={true}
+                                max={500}
                                 testID={`${testID}-weight`}
                             />
                         </View>
                         <View style={styles.inputWrapper}>
-                            <WheelInput
+                            <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
-                                items={repsItems}
                                 label="REPS"
-                                title="Select Reps"
+                                allowDecimals={false}
+                                max={999}
                                 testID={`${testID}-reps`}
                             />
                         </View>
@@ -170,22 +164,22 @@ export function SetRow({
                 return (
                     <>
                         <View style={styles.inputWrapper}>
-                            <WheelInput
+                            <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
-                                items={weightItems}
                                 label={weightLabel}
-                                title="Added Weight"
+                                allowDecimals={true}
+                                max={200}
                                 testID={`${testID}-weight`}
                             />
                         </View>
                         <View style={styles.inputWrapper}>
-                            <WheelInput
+                            <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
-                                items={repsItems}
                                 label="REPS"
-                                title="Select Reps"
+                                allowDecimals={false}
+                                max={999}
                                 testID={`${testID}-reps`}
                             />
                         </View>
@@ -209,12 +203,12 @@ export function SetRow({
                 return (
                     <>
                         <View style={styles.inputWrapper}>
-                            <WheelInput
+                            <NumericInput
                                 value={distance}
                                 onChange={onDistanceChange || (() => { })}
-                                items={distanceItems}
                                 label={distanceUnit.toUpperCase()}
-                                title="Select Distance"
+                                allowDecimals={true}
+                                max={1000}
                                 testID={`${testID}-distance`}
                             />
                         </View>

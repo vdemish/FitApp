@@ -80,7 +80,9 @@ export function TimeInput({
     };
 
     const handleDone = () => {
-        onChange(timeToSeconds(tempMinutes, tempSeconds));
+        const totalSeconds = timeToSeconds(tempMinutes, tempSeconds);
+        console.log('[TimeInput] handleDone:', { tempMinutes, tempSeconds, totalSeconds });
+        onChange(totalSeconds);
         setVisible(false);
     };
 
@@ -140,7 +142,7 @@ export function TimeInput({
                                     selectedValue={tempMinutes}
                                     onValueChange={(val) => setTempMinutes(val)}
                                     itemStyle={{ color: themeColors.textPrimary, fontSize: 24 }}
-                                    style={{ color: themeColors.textPrimary }}
+                                    style={[styles.picker, { color: themeColors.textPrimary }]}
                                     testID={`${testID}-minutes`}
                                 >
                                     {minuteItems.map((item) => (
@@ -162,7 +164,7 @@ export function TimeInput({
                                     selectedValue={tempSeconds}
                                     onValueChange={(val) => setTempSeconds(val)}
                                     itemStyle={{ color: themeColors.textPrimary, fontSize: 24 }}
-                                    style={{ color: themeColors.textPrimary }}
+                                    style={[styles.picker, { color: themeColors.textPrimary }]}
                                     testID={`${testID}-seconds`}
                                 >
                                     {secondItems.map((item) => (
@@ -245,6 +247,10 @@ const styles = StyleSheet.create({
     pickerColumn: {
         flex: 1,
         alignItems: 'center',
+    },
+    picker: {
+        width: '100%',
+        height: 200,
     },
     pickerLabel: {
         fontSize: 12,

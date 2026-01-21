@@ -201,9 +201,16 @@ export function useActiveWorkout(
     // Create debounced save function
     const debouncedSaveSet = useMemo(
         () =>
-            debounce(async (setId: string, updates: Partial<{ weight: number; reps: number }>) => {
+            debounce(async (setId: string, updates: Partial<{ weight: number; reps: number; distance: number; durationSeconds: number }>) => {
                 try {
-                    await workoutService.updateSet(setId, updates);
+                    // Map camelCase to snake_case for database
+                    const dbUpdates: Record<string, number> = {};
+                    if (updates.weight !== undefined) dbUpdates.weight = updates.weight;
+                    if (updates.reps !== undefined) dbUpdates.reps = updates.reps;
+                    if (updates.distance !== undefined) dbUpdates.distance = updates.distance;
+                    if (updates.durationSeconds !== undefined) dbUpdates.duration_seconds = updates.durationSeconds;
+
+                    await workoutService.updateSet(setId, dbUpdates);
                     pendingUpdates.current.delete(setId);
                 } catch (err) {
                     console.error('[useActiveWorkout] Failed to save set:', err);

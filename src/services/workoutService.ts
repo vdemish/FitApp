@@ -688,7 +688,7 @@ export async function addSet(
  */
 export async function updateSet(
     setId: string,
-    updates: Partial<Pick<Set, 'weight' | 'reps' | 'status' | 'notes'>>
+    updates: Partial<Pick<Set, 'weight' | 'reps' | 'distance' | 'duration_seconds' | 'status' | 'notes'>>
 ): Promise<Set> {
     const updateData: any = { ...updates };
 
