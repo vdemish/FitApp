@@ -423,7 +423,11 @@ export function useActiveWorkout(
             const lastSet = existingSets[existingSets.length - 1];
             const setNumber = existingSets.length + 1;
             const defaultWeight = lastSet?.weight || 0;
-            const defaultReps = lastSet?.reps || 10;
+            const isRepBased = workoutExercise.exercise?.tracking_type === 'weight_reps' ||
+                workoutExercise.exercise?.tracking_type === 'weighted_bodyweight';
+            // Default to 10 for rep-based exercises, 0 for others (duration/distance)
+            const fallbackReps = isRepBased ? 10 : 0;
+            const defaultReps = lastSet?.reps ?? fallbackReps;
 
             // Create optimistic set
             const tempId = generateTempId();
