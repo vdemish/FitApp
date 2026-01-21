@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActiveExerciseCard, FocusRestTimer, AddExerciseModal } from '@/components';
 import { Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { useActiveWorkout, useThemeColors, ActiveExercise } from '@/hooks';
+import { useActiveWorkout, useThemeColors, ActiveExercise, useWorkoutTimer } from '@/hooks';
 import { triggerTimerTick, triggerSuccess, triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
@@ -134,48 +134,13 @@ export function ActiveWorkoutScreen() {
         [actions]
     );
 
-    // Timer interval logic
-    const [remainingTime, setRemainingTime] = React.useState(0);
-    const lastHapticTimeRef = React.useRef<number>(-1);
-
-    // Reset haptic ref when timer starts
-    useEffect(() => {
-        if (timerState.isActive) {
-            lastHapticTimeRef.current = -1;
-        }
-    }, [timerState.isActive, timerState.lastCompletedSetTimestamp]);
-
-    // Update remaining time when timer state changes or on interval
-    useEffect(() => {
-        if (!timerState.isActive || !timerState.lastCompletedSetTimestamp) {
-            setRemainingTime(0);
-            return;
-        }
-
-        const updateTimer = () => {
-            const elapsed = Math.floor((Date.now() - timerState.lastCompletedSetTimestamp!) / 1000);
-            const remaining = Math.max(0, timerState.restSeconds - elapsed);
-            setRemainingTime(remaining);
-
-            // Haptic Feedback
-            if (remaining !== lastHapticTimeRef.current) {
-                if (remaining <= 5 && remaining > 0) {
-                    triggerTimerTick();
-                } else if (remaining === 0) {
-                    triggerSuccess();
-                }
-                lastHapticTimeRef.current = remaining;
-            }
-
-            // Auto-dismiss if 0
-            if (remaining === 0) actions.dismissTimer();
-        };
-
-        updateTimer(); // Initial update
-        const interval = setInterval(updateTimer, 1000);
-
-        return () => clearInterval(interval);
-    }, [timerState.isActive, timerState.lastCompletedSetTimestamp, timerState.restSeconds]);
+    // Timer Logic using the new hook
+    const { remainingTime } = useWorkoutTimer({
+        isActive: timerState.isActive,
+        duration: timerState.restSeconds,
+        startTime: timerState.lastCompletedSetTimestamp,
+        onComplete: actions.dismissTimer
+    });
 
     // Render loading state
     if (isLoading) {
