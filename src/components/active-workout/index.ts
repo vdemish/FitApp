@@ -11,3 +11,4 @@ export { AddExerciseModal } from './AddExerciseModal';
 export { WheelInput } from './WheelInput';
 export { NumericInput } from './NumericInput';
 export { TimeInput, formatDuration, secondsToTime, timeToSeconds } from './TimeInput';
+export { FocusRestTimer } from './FocusRestTimer';

@@ -20,7 +20,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ActiveExerciseCard, RestTimerCard, AddExerciseModal } from '@/components';
+import { ActiveExerciseCard, FocusRestTimer, AddExerciseModal } from '@/components';
 import { Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useActiveWorkout, useThemeColors, ActiveExercise } from '@/hooks';
@@ -357,18 +357,13 @@ export function ActiveWorkoutScreen() {
                 )}
             </KeyboardAvoidingView>
 
-            {/* Rest Timer Overlay */}
-            {timerState.isActive && (
-                <View style={styles.timerOverlay}>
-                    <RestTimerCard
-                        seconds={remainingTime}
-                        onAdd30={() => actions.addRestTime(30)}
-                        onSubtract10={() => actions.addRestTime(-10)}
-                        onSkip={actions.dismissTimer}
-                        testID="rest-timer"
-                    />
-                </View>
-            )}
+            {/* Focus Rest Timer Overlay */}
+            <FocusRestTimer
+                isVisible={timerState.isActive}
+                secondsRemaining={remainingTime}
+                onAddSeconds={(secs) => actions.addRestTime(secs)}
+                onClose={actions.dismissTimer}
+            />
 
             <AddExerciseModal
                 visible={isAddExerciseModalVisible}
@@ -529,14 +524,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    // Timer Overlay
-    timerOverlay: {
-        position: 'absolute',
-        bottom: spacing.lg,
-        left: spacing.lg,
-        right: spacing.lg,
-        zIndex: 100, // Ensure it's above everything
-    },
+
     addExerciseContainer: {
         alignItems: 'center',
         marginTop: spacing.sm,

@@ -140,7 +140,7 @@ export function HomeScreen() {
                         <Text style={styles.statEmoji}>🔥</Text>
                         <View style={styles.statInfo}>
                             <UIText variant="caption" muted>Streak</UIText>
-                            <Heading level={3}>{stats?.weekStreak || 0} Days</Heading>
+                            <Heading level={3}>{stats?.weekStreak || 0} Weeks</Heading>
                         </View>
                     </GlassCard>
                 </View>
