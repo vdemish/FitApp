@@ -9,6 +9,7 @@ import {
     Pressable,
     StyleSheet,
     ViewStyle,
+    StyleProp,
     Platform,
 } from 'react-native';
 import { colors, spacing, radius } from '@/theme';
@@ -24,7 +25,7 @@ interface GlassCardProps {
     /** Цветная полоса слева */
     accent?: AccentType;
     /** Дополнительные стили */
-    style?: ViewStyle;
+    style?: StyleProp<ViewStyle>;
     /** Обработчик нажатия */
     onPress?: () => void;
     /** Обработчик нажатия (начало) */

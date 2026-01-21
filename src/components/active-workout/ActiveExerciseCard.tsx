@@ -149,7 +149,7 @@ export function ActiveExerciseCard({
                         </Text>
                     </>
                 )}
-                {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight' || trackingType === 'distance_duration' || trackingType === 'distance_duration') && (
+                {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight' || trackingType === 'distance_duration') && (
                     <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>
                         ✓
                     </Text>

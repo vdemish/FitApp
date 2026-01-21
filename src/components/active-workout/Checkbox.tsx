@@ -32,7 +32,7 @@ export function Checkbox({ checked, onToggle, testID, disabled = false }: Checkb
             }}
             style={({ pressed }) => [
                 styles.container,
-                { borderColor: checked ? colors.primary.DEFAULT : themeColors.border },
+                { borderColor: checked ? colors.primary.DEFAULT : themeColors.textMuted },
                 checked && styles.checked,
                 disabled && styles.disabled,
                 pressed && !disabled && styles.pressed,
