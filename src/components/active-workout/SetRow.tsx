@@ -1,11 +1,12 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { NumericInput } from './NumericInput';
-import { TimeInput } from './TimeInput';
+import { TimeInput, formatDuration } from './TimeInput';
 import { Checkbox } from './Checkbox';
-import { typography, spacing } from '@/theme';
+import { typography, spacing, radius } from '@/theme';
 import { useThemeColors, useIsDarkTheme } from '@/hooks';
 import { ExerciseTrackingType, getSetInputFields } from '@/types';
+import { useSetTimer } from './useSetTimer';
 
 interface SetRowProps {
     /** Set number (1-based) */
@@ -69,8 +70,39 @@ export function SetRow({
     const themeColors = useThemeColors();
     const isDark = useIsDarkTheme();
 
-    // Get input field configuration based on tracking type
-    const inputFields = getSetInputFields(trackingType);
+    // Timer hook integration
+    const {
+        isActive: isTimerActive,
+        elapsed,
+        remaining,
+        mode,
+        toggleTimer,
+        finishTimer
+    } = useSetTimer({
+        initialDuration: durationSeconds,
+        onComplete: () => {
+            // Auto-complete set when countdown reaches 0
+            // We don't trigger finishTimer here as we want the user to consciously finish/save?
+            // Or maybe we do? Requirement says: "Mark set as complete. Logged Time = Target Time."
+            // Let's rely on the user to see it finished or handle auto-complete logic in upcoming steps if verified.
+            // For now, let's keep it manual finish or handle effect below.
+
+            // Actually requirement says: "If the timer reaches 0 naturally: Mark set as complete."
+            // So we should trigger completion.
+            const finalTime = durationSeconds; // Target time
+            if (onDurationChange) onDurationChange(finalTime);
+            onToggleComplete();
+        }
+    });
+
+    // Handle manual finish
+    const handleFinishTimer = () => {
+        const loggedTime = finishTimer();
+        if (onDurationChange) onDurationChange(loggedTime);
+        if (!isCompleted) {
+            onToggleComplete();
+        }
+    };
 
     // Animation value for the pulse effect
     const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -80,9 +112,9 @@ export function SetRow({
         ? `+${weightUnit.toUpperCase()}`
         : weightUnit.toUpperCase();
 
-    // Setup pulse animation
+    // Setup pulse animation (Active Set OR Active Timer)
     useEffect(() => {
-        if (isActive) {
+        if (isActive || isTimerActive) {
             const animation = Animated.loop(
                 Animated.sequence([
                     Animated.timing(pulseAnim, {
@@ -102,14 +134,14 @@ export function SetRow({
         } else {
             pulseAnim.setValue(0);
         }
-    }, [isActive, pulseAnim]);
+    }, [isActive, isTimerActive, pulseAnim]);
 
     // Interpolate values for animation
     const borderColor = pulseAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [
             themeColors.surface,
-            themeColors.primary,
+            isTimerActive ? themeColors.success : themeColors.primary, // Green for timer
         ],
     });
 
@@ -119,10 +151,10 @@ export function SetRow({
         outputRange: [0, 0.5],
     });
 
-    const activeStyle = isActive
+    const activeStyle = (isActive || isTimerActive)
         ? {
             borderColor: borderColor,
-            shadowColor: themeColors.primary,
+            shadowColor: isTimerActive ? themeColors.success : themeColors.primary,
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: isDark ? shadowOpacity : 0,
             shadowRadius: 10,
@@ -131,8 +163,28 @@ export function SetRow({
         }
         : {};
 
+    const isTimerType = trackingType === 'duration' || trackingType === 'distance_duration';
+
     // Render inputs based on tracking type
     const renderInputs = () => {
+        if (isTimerActive) {
+            // Show active timer display instead of inputs when running
+            const displayTime = mode === 'countdown' ? remaining : elapsed;
+
+            return (
+                <View style={[styles.timerDisplayContainer, { flex: 1 }]}>
+                    <Text style={[styles.timerDisplayText, { color: themeColors.textPrimary }]}>
+                        {formatDuration(displayTime)}
+                    </Text>
+                    {mode === 'countdown' && (
+                        <Text style={[styles.timerLabelText, { color: themeColors.textMuted }]}>
+                            REMAINING
+                        </Text>
+                    )}
+                </View>
+            );
+        }
+
         switch (trackingType) {
             case 'weight_reps':
                 return (
@@ -141,7 +193,7 @@ export function SetRow({
                             <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
-                                label={weightLabel}
+                                // label={weightLabel}
                                 allowDecimals={true}
                                 max={500}
                                 testID={`${testID}-weight`}
@@ -151,7 +203,7 @@ export function SetRow({
                             <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
-                                label="REPS"
+                                // label="REPS"
                                 allowDecimals={false}
                                 max={999}
                                 testID={`${testID}-reps`}
@@ -167,7 +219,7 @@ export function SetRow({
                             <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
-                                label={weightLabel}
+                                // label={weightLabel}
                                 allowDecimals={true}
                                 max={200}
                                 testID={`${testID}-weight`}
@@ -177,7 +229,7 @@ export function SetRow({
                             <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
-                                label="REPS"
+                                // label="REPS"
                                 allowDecimals={false}
                                 max={999}
                                 testID={`${testID}-reps`}
@@ -193,7 +245,7 @@ export function SetRow({
                             value={durationSeconds}
                             onChange={onDurationChange || (() => { })}
                             label="TIME"
-                            title="Select Duration"
+                            title="Select Target Duration"
                             testID={`${testID}-duration`}
                         />
                     </View>
@@ -217,7 +269,7 @@ export function SetRow({
                                 value={durationSeconds}
                                 onChange={onDurationChange || (() => { })}
                                 label="TIME"
-                                title="Select Duration"
+                                title="Select Target Duration"
                                 testID={`${testID}-duration`}
                             />
                         </View>
@@ -227,6 +279,56 @@ export function SetRow({
             default:
                 return null;
         }
+    };
+
+    const renderAction = () => {
+        if (!isTimerType) {
+            return (
+                <Checkbox
+                    checked={isCompleted}
+                    onToggle={onToggleComplete}
+                    testID={`${testID}-checkbox`}
+                    disabled={disabled}
+                />
+            );
+        }
+
+        if (isCompleted) {
+            // Already completed, allow un-completing (reset?) or just show simple checkbox-like state?
+            // Use case says "Finish" acts as completion. If completed, maybe show a "Completed" state or a revert button.
+            // For simplicity, let's show a checked checkbox to allow toggling off if mistake.
+            return (
+                <Checkbox
+                    checked={true}
+                    onToggle={onToggleComplete} // This will toggle it back to incomplete
+                    testID={`${testID}-checkbox-completed`}
+                />
+            );
+        }
+
+        if (isTimerActive) {
+            return (
+                <TouchableOpacity
+                    onPress={handleFinishTimer}
+                    style={[styles.timerButton, { backgroundColor: themeColors.primary }]}
+                >
+                    <Text style={[styles.timerButtonText, { color: '#FFFFFF' }]}>
+                        FINISH
+                    </Text>
+                </TouchableOpacity>
+            );
+        }
+
+        return (
+            <TouchableOpacity
+                onPress={() => toggleTimer(durationSeconds)}
+                style={[styles.timerButton, { backgroundColor: themeColors.surface, borderColor: themeColors.primary, borderWidth: 1 }]}
+            >
+                <Text style={[styles.timerButtonText, { color: themeColors.primary }]}>
+                    START
+                </Text>
+            </TouchableOpacity>
+        );
     };
 
     return (
@@ -244,9 +346,9 @@ export function SetRow({
                 style={[
                     styles.setIndicator,
                     {
-                        borderColor: isActive ? themeColors.primary : themeColors.border,
-                        backgroundColor: isActive
-                            ? `${themeColors.primary}15`
+                        borderColor: (isActive || isTimerActive) ? (isTimerActive ? themeColors.success : themeColors.primary) : themeColors.border,
+                        backgroundColor: (isActive || isTimerActive)
+                            ? (isTimerActive ? `${themeColors.success}15` : `${themeColors.primary}15`)
                             : 'transparent',
                     },
                 ]}
@@ -255,8 +357,8 @@ export function SetRow({
                     style={[
                         styles.setNumber,
                         {
-                            color: isActive
-                                ? themeColors.primary
+                            color: (isActive || isTimerActive)
+                                ? (isTimerActive ? themeColors.success : themeColors.primary)
                                 : themeColors.textSecondary,
                         },
                     ]}
@@ -275,13 +377,8 @@ export function SetRow({
             {/* Dynamic Inputs */}
             {renderInputs()}
 
-            {/* Completion Checkbox */}
-            <Checkbox
-                checked={isCompleted}
-                onToggle={onToggleComplete}
-                testID={`${testID}-checkbox`}
-                disabled={disabled}
-            />
+            {/* Completion Action (Checkbox or Timer Button) */}
+            {renderAction()}
         </Animated.View>
     );
 }
@@ -316,6 +413,7 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: typography.fontWeight.normal,
         minWidth: 50,
+        // Hide on small screens if needed, or adjust spacing
     },
     inputWrapper: {
         flex: 1,
@@ -324,5 +422,30 @@ const styles = StyleSheet.create({
     inputWrapperWide: {
         flex: 2,
         maxWidth: 200,
+    },
+    timerButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: radius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 80,
+    },
+    timerButtonText: {
+        fontSize: typography.fontSize.caption,
+        fontWeight: typography.fontWeight.bold,
+    },
+    timerDisplayContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    timerDisplayText: {
+        fontSize: typography.fontSize.h2,
+        fontWeight: typography.fontWeight.bold,
+        fontVariant: ['tabular-nums'],
+    },
+    timerLabelText: {
+        fontSize: 10,
+        marginTop: 2,
     },
 });

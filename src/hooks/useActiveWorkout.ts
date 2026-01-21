@@ -306,12 +306,15 @@ export function useActiveWorkout(
             setWorkout((prev) => {
                 if (!prev?.exercises) return prev;
 
+                // Map field name for local state (DB schema matches these except durationSeconds)
+                const stateField = field === 'durationSeconds' ? 'duration_seconds' : field;
+
                 return {
                     ...prev,
                     exercises: prev.exercises.map((we) => ({
                         ...we,
                         sets: we.sets?.map((set) =>
-                            set.id === setId ? { ...set, [field]: value } : set
+                            set.id === setId ? { ...set, [stateField]: value } : set
                         ),
                     })),
                 };

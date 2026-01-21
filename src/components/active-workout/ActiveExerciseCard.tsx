@@ -120,7 +120,7 @@ export function ActiveExerciseCard({
             {/* Column Headers */}
             <View style={styles.columnHeaders}>
                 <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>SET</Text>
-                <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>PREVIOUS</Text>
+                {/* <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>PREVIOUS</Text> */}
                 {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight') && (
                     <>
                         <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
@@ -131,11 +131,11 @@ export function ActiveExerciseCard({
                         </Text>
                     </>
                 )}
-                {trackingType === 'duration' && (
+                {/* {trackingType === 'duration' && (
                     <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
                         TIME
                     </Text>
-                )}
+                )} */}
                 {trackingType === 'distance_duration' && (
                     <>
                         <Text style={[styles.columnLabel, styles.columnLabelFlex, dynamicStyles.columnLabel]}>
@@ -146,7 +146,11 @@ export function ActiveExerciseCard({
                         </Text>
                     </>
                 )}
-                <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>✓</Text>
+                {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight' || trackingType === 'distance_duration' || trackingType === 'distance_duration') && (
+                    <Text style={[styles.columnLabel, dynamicStyles.columnLabel]}>
+                        ✓
+                    </Text>
+                )}
             </View>
 
             {/* Sets List */}
