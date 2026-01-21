@@ -42,7 +42,10 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
     const distanceUnitLabel = units === 'imperial' ? 'MI' : 'KM';
 
     // Helpers
-    const displayWeight = (kg: number) => Math.round(convertWeight(kg, unitPref));
+    const displayWeight = (kg: number) => {
+        const val = convertWeight(kg, unitPref);
+        return Math.round(val * 100) / 100;
+    };
     const displayDistance = (km: number) => {
         if (!km) return 0;
         return units === 'imperial'

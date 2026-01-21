@@ -3,8 +3,8 @@
  * Connected to real database via useUserStats and AuthContext
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -16,9 +16,22 @@ import { colors, typography, spacing, radius } from '@/theme';
 
 export function ProfileScreen() {
     const { user, profile, signOut } = useAuth();
-    const { stats, loading } = useUserStats();
+    const { stats, loading, refetch } = useUserStats();
     const { activeTheme, setTheme } = useSettings();
     const themeColors = useThemeColors();
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        triggerSelection();
+        try {
+            await refetch?.();
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetch]);
 
     // Toggle between dark and light themes
     const handleThemeToggle = async (isDark: boolean) => {
@@ -44,7 +57,7 @@ export function ProfileScreen() {
     // Форматирование веса
     const formatWeight = (weight: number | null | undefined): string => {
         if (!weight) return '--';
-        return weight.toFixed(1);
+        return Number(weight.toFixed(2)).toString();
     };
 
     // Dynamic styles based on theme
@@ -81,6 +94,14 @@ export function ProfileScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary.DEFAULT}
+                        colors={[colors.primary.DEFAULT]}
+                    />
+                }
             >
                 {/* Profile Header Card */}
                 <GlassCard glow style={styles.profileCard}>

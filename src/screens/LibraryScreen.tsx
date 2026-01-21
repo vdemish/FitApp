@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
@@ -23,12 +23,13 @@ type RootStackParamList = {
 
 export function LibraryScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const { exercises, muscleGroups, loading, error } = useExercises();
+    const { exercises, muscleGroups, loading, error, refetch: refetchExercises } = useExercises();
     const { templates, loading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more for library view
     const themeColors = useThemeColors();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Selection Mode State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -38,6 +39,21 @@ export function LibraryScreen() {
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        triggerSelection();
+        try {
+            await Promise.all([
+                refetchExercises(),
+                refetchTemplates()
+            ]);
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetchExercises, refetchTemplates]);
 
     // Dynamic styles based on theme
     const dynamicStyles = useMemo(() => ({
@@ -49,6 +65,7 @@ export function LibraryScreen() {
         floatingBar: { backgroundColor: themeColors.background, borderTopColor: themeColors.border },
         modalOverlay: { backgroundColor: 'rgba(0,0,0,0.5)' },
         modalContent: { backgroundColor: themeColors.surface },
+        checkbox: { borderColor: themeColors.textMuted },
     }), [themeColors]);
 
     // My Templates (User created only)
@@ -180,7 +197,11 @@ export function LibraryScreen() {
                 </View>
 
                 {isSelectionMode ? (
-                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                    <View style={[
+                        styles.checkbox,
+                        dynamicStyles.checkbox,
+                        selected && styles.checkboxSelected
+                    ]}>
                         {selected && <Text style={styles.checkmarkText}>✓</Text>}
                     </View>
                 ) : (
@@ -207,7 +228,7 @@ export function LibraryScreen() {
         return iconMap[icon] || '📋';
     };
 
-    if (loading) {
+    if (loading && !refreshing && exercises.length === 0) {
         return (
             <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
@@ -223,6 +244,14 @@ export function LibraryScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary.DEFAULT}
+                        colors={[colors.primary.DEFAULT]}
+                    />
+                }
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -537,7 +566,7 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: colors.textMuted,
+        // borderColor set dynamically
         alignItems: 'center',
         justifyContent: 'center',
     },

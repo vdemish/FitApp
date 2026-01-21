@@ -71,7 +71,7 @@ export function HistoryScreen() {
         if (volume >= 1000) {
             return `${(volume / 1000).toFixed(1)}k kg`;
         }
-        return `${Math.round(volume)}kg`;
+        return `${Math.round(volume * 100) / 100}kg`;
     };
 
     // Генерация календаря (текущая неделя)

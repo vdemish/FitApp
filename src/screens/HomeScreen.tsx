@@ -4,15 +4,16 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GlassCard, Button, Heading } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { useThemeColors } from '@/hooks';
+import { useThemeColors, useUserStats } from '@/hooks';
 import { colors, typography, spacing, radius } from '@/theme';
 import { StartWorkoutModal } from '@/components';
+import { triggerSelection } from '@/utils/haptics';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
 import type { Exercise } from '@/types';
 
@@ -33,7 +34,9 @@ function formatDateHeader(date: Date): string {
 export function HomeScreen() {
     const navigation = useNavigation<HomeScreenNavigationProp>();
     const themeColors = useThemeColors();
+    const { stats, refetch } = useUserStats();
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Dynamic styles based on theme
     const dynamicStyles = useMemo(() => ({
@@ -41,6 +44,18 @@ export function HomeScreen() {
     }), [themeColors]);
 
     const todayDate = formatDateHeader(new Date());
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        triggerSelection();
+        try {
+            await refetch?.();
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetch]);
 
     const handleStartWorkout = () => {
         setIsModalVisible(true);
@@ -76,6 +91,14 @@ export function HomeScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary.DEFAULT}
+                        colors={[colors.primary.DEFAULT]}
+                    />
+                }
             >
                 {/* Header with Date */}
                 <View style={styles.header}>
@@ -109,7 +132,7 @@ export function HomeScreen() {
                         <Text style={styles.statEmoji}>📊</Text>
                         <View style={styles.statInfo}>
                             <UIText variant="caption" muted>This Week</UIText>
-                            <Heading level={3}>0 Workouts</Heading>
+                            <Heading level={3}>{stats?.totalWorkouts || 0} Workouts</Heading>
                         </View>
                     </GlassCard>
 
@@ -117,7 +140,7 @@ export function HomeScreen() {
                         <Text style={styles.statEmoji}>🔥</Text>
                         <View style={styles.statInfo}>
                             <UIText variant="caption" muted>Streak</UIText>
-                            <Heading level={3}>0 Days</Heading>
+                            <Heading level={3}>{stats?.weekStreak || 0} Days</Heading>
                         </View>
                     </GlassCard>
                 </View>
