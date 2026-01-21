@@ -5,10 +5,11 @@ import { GlassCard, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { Text } from 'react-native';
 import { useThemeColors } from '@/hooks';
+import { useSettings } from '@/context/SettingsContext';
 import { getWorkoutDetails } from '@/services/workoutService';
 import { triggerSelection } from '@/utils/haptics';
-import { colors, spacing, radius, typography } from '@/theme';
-import type { Workout, WorkoutExercise, Set } from '@/types';
+import { colors, spacing } from '@/theme';
+import { type Workout, type Set, convertWeight, type UnitPreference } from '@/types';
 
 interface HistoryWorkoutModalProps {
     visible: boolean;
@@ -18,6 +19,7 @@ interface HistoryWorkoutModalProps {
 
 export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWorkoutModalProps) {
     const themeColors = useThemeColors();
+    const { units } = useSettings();
     const [workout, setWorkout] = useState<Workout | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -33,6 +35,20 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
         tableRow: { borderBottomColor: themeColors.border },
         summaryValue: { color: themeColors.textPrimary },
     }), [themeColors]);
+
+    // Derived unit preferences
+    const unitPref: UnitPreference = units === 'imperial' ? 'lbs' : 'kg';
+    const weightUnitLabel = units === 'imperial' ? 'LBS' : 'KG';
+    const distanceUnitLabel = units === 'imperial' ? 'MI' : 'KM';
+
+    // Helpers
+    const displayWeight = (kg: number) => Math.round(convertWeight(kg, unitPref));
+    const displayDistance = (km: number) => {
+        if (!km) return 0;
+        return units === 'imperial'
+            ? Number((km * 0.621371).toFixed(2))
+            : km;
+    };
 
     useEffect(() => {
         if (visible && workoutId) {
@@ -69,11 +85,15 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
     };
 
     const formatDuration = (seconds: number | null) => {
-        if (!seconds) return '0m';
+        if (!seconds) return '00:00';
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        if (hours > 0) return `${hours}h ${minutes}m`;
-        return `${minutes}m`;
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${secs}s`;
+        }
+        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     // Approximate calories (very rough estimate: 0.05 kcal/kg/min * 70kg user ~ 3.5 kcal/min for creating lifting)
@@ -82,12 +102,6 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
         if (!seconds) return 0;
         const minutes = seconds / 60;
         return Math.round(minutes * 5);
-    };
-
-    const formatSetType = (set: Set) => {
-        if (set.is_warmup) return ' (Warmup)';
-        if (set.is_dropset) return ' (Drop)';
-        return '';
     };
 
     if (!visible) return null;
@@ -137,7 +151,7 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
                                 <View style={styles.summaryItem}>
                                     <Label style={styles.summaryLabel}>Volume</Label>
                                     <UIText variant="display" style={[dynamicStyles.summaryValue, { fontSize: 24 }]}>
-                                        {Math.round(workout.total_volume || 0)} kg
+                                        {displayWeight(workout.total_volume || 0)} {weightUnitLabel.toLowerCase()}
                                     </UIText>
                                 </View>
                                 <View style={styles.summaryItem}>
@@ -163,51 +177,93 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
 
                         {/* Exercises List */}
                         <View style={styles.exercisesList}>
-                            {workout.exercises?.map((exercise, index) => (
-                                <GlassCard key={exercise.id} style={styles.exerciseCard}>
-                                    <View style={styles.exerciseHeader}>
-                                        <Text style={styles.exerciseEmoji}>
-                                            {exercise.exercise?.icon === 'fitness_center' ? '🏋️' : '💪'}
-                                        </Text>
-                                        <View>
-                                            <Heading level={3}>{exercise.exercise?.name || 'Unknown Exercise'}</Heading>
-                                            <UIText variant="body-sm" muted>
-                                                {exercise.exercise?.muscle_group?.name || 'Unknown Group'}
-                                            </UIText>
-                                        </View>
-                                    </View>
+                            {workout.exercises?.map((exercise) => {
+                                const trackingType = exercise.exercise?.tracking_type || 'weight_reps';
+                                const weightLabel = trackingType === 'weighted_bodyweight' ? `+${weightUnitLabel}` : weightUnitLabel;
 
-                                    {/* Sets Table */}
-                                    <View style={styles.setsTable}>
-                                        <View style={[styles.tableHeader, dynamicStyles.tableHeader]}>
-                                            <Label style={[styles.colSet, { textAlign: 'center' }]}>SET</Label>
-                                            <Label style={[styles.colWeight, { textAlign: 'center' }]}>KG</Label>
-                                            <Label style={[styles.colReps, { textAlign: 'center' }]}>REPS</Label>
-                                        </View>
-                                        {exercise.sets?.map((set) => (
-                                            <View key={set.id} style={[styles.tableRow, dynamicStyles.tableRow]}>
-                                                <View style={styles.colSet}>
-                                                    <View style={[
-                                                        styles.setBadge,
-                                                        set.is_warmup && styles.setBadgeWarmup,
-                                                        set.is_dropset && styles.setBadgeDrop
-                                                    ]}>
-                                                        <UIText variant="caption" style={styles.setText}>
-                                                            {set.set_number}
-                                                        </UIText>
-                                                    </View>
-                                                </View>
-                                                <UIText variant="body" style={[styles.colWeight, { textAlign: 'center' }]}>
-                                                    {set.weight}
-                                                </UIText>
-                                                <UIText variant="body" style={[styles.colReps, { textAlign: 'center' }]}>
-                                                    {set.reps}
+                                return (
+                                    <GlassCard key={exercise.id} style={styles.exerciseCard}>
+                                        <View style={styles.exerciseHeader}>
+                                            <Text style={styles.exerciseEmoji}>
+                                                {exercise.exercise?.icon === 'fitness_center' ? '🏋️' : '💪'}
+                                            </Text>
+                                            <View>
+                                                <Heading level={3}>{exercise.exercise?.name || 'Unknown Exercise'}</Heading>
+                                                <UIText variant="body-sm" muted>
+                                                    {exercise.exercise?.muscle_group?.name || 'Unknown Group'}
                                                 </UIText>
                                             </View>
-                                        ))}
-                                    </View>
-                                </GlassCard>
-                            ))}
+                                        </View>
+
+                                        {/* Sets Table */}
+                                        <View style={styles.setsTable}>
+                                            <View style={[styles.tableHeader, dynamicStyles.tableHeader]}>
+                                                <Label style={[styles.colSet, { textAlign: 'center' }]}>SET</Label>
+
+                                                {/* Dynamic Headers */}
+                                                {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight') && (
+                                                    <>
+                                                        <Label style={[styles.colWeight, { textAlign: 'center' }]}>{weightLabel}</Label>
+                                                        <Label style={[styles.colReps, { textAlign: 'center' }]}>REPS</Label>
+                                                    </>
+                                                )}
+                                                {trackingType === 'duration' && (
+                                                    <Label style={[styles.colWeight, { textAlign: 'center', flex: 2 }]}>TIME</Label>
+                                                )}
+                                                {trackingType === 'distance_duration' && (
+                                                    <>
+                                                        <Label style={[styles.colWeight, { textAlign: 'center' }]}>{distanceUnitLabel}</Label>
+                                                        <Label style={[styles.colReps, { textAlign: 'center' }]}>TIME</Label>
+                                                    </>
+                                                )}
+                                            </View>
+
+                                            {exercise.sets?.map((set) => (
+                                                <View key={set.id} style={[styles.tableRow, dynamicStyles.tableRow]}>
+                                                    <View style={styles.colSet}>
+                                                        <View style={[
+                                                            styles.setBadge,
+                                                            set.is_warmup && styles.setBadgeWarmup,
+                                                            set.is_dropset && styles.setBadgeDrop
+                                                        ]}>
+                                                            <UIText variant="caption" style={styles.setText}>
+                                                                {set.set_number}
+                                                            </UIText>
+                                                        </View>
+                                                    </View>
+
+                                                    {/* Dynamic Values */}
+                                                    {(trackingType === 'weight_reps' || trackingType === 'weighted_bodyweight') && (
+                                                        <>
+                                                            <UIText variant="body" style={[styles.colWeight, { textAlign: 'center' }]}>
+                                                                {displayWeight(set.weight)}
+                                                            </UIText>
+                                                            <UIText variant="body" style={[styles.colReps, { textAlign: 'center' }]}>
+                                                                {set.reps}
+                                                            </UIText>
+                                                        </>
+                                                    )}
+                                                    {trackingType === 'duration' && (
+                                                        <UIText variant="body" style={[styles.colWeight, { textAlign: 'center', flex: 2 }]}>
+                                                            {formatDuration(set.duration_seconds || 0)}
+                                                        </UIText>
+                                                    )}
+                                                    {trackingType === 'distance_duration' && (
+                                                        <>
+                                                            <UIText variant="body" style={[styles.colWeight, { textAlign: 'center' }]}>
+                                                                {displayDistance(set.distance || 0)}
+                                                            </UIText>
+                                                            <UIText variant="body" style={[styles.colReps, { textAlign: 'center' }]}>
+                                                                {formatDuration(set.duration_seconds || 0)}
+                                                            </UIText>
+                                                        </>
+                                                    )}
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </GlassCard>
+                                );
+                            })}
                         </View>
 
                         {/* Bottom Padding */}

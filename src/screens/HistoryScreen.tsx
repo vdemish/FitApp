@@ -3,8 +3,8 @@
  * Connected to real database via useWorkoutHistory and useUserStats hooks
  */
 
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label, HistoryWorkoutModal } from '@/components';
 import { Text as UIText } from '@/components/ui/Text';
@@ -16,12 +16,28 @@ import type { Workout } from '@/types';
 const WEEK_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function HistoryScreen() {
-    const { workouts, loading: historyLoading } = useWorkoutHistory(10);
-    const { stats, totalVolume, volumeData, loading: statsLoading } = useUserStats(30);
+    const { workouts, loading: historyLoading, refetch: refetchHistory } = useWorkoutHistory(10);
+    const { stats, totalVolume, volumeData, loading: statsLoading, refetch: refetchStats } = useUserStats(30);
     const themeColors = useThemeColors();
     const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const loading = historyLoading || statsLoading;
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        triggerSelection();
+        try {
+            await Promise.all([
+                refetchHistory(),
+                refetchStats()
+            ]);
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refetchHistory, refetchStats]);
 
     // Dynamic styles based on theme
     const dynamicStyles = useMemo(() => ({
@@ -83,7 +99,7 @@ export function HistoryScreen() {
 
     const calendarDays = getCalendarDays();
 
-    if (loading) {
+    if (loading && !refreshing && workouts.length === 0) {
         return (
             <SafeAreaView style={[styles.container, dynamicStyles.container]} edges={['top']}>
                 <View style={styles.loadingContainer}>
@@ -102,6 +118,14 @@ export function HistoryScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary.DEFAULT}
+                        colors={[colors.primary.DEFAULT]}
+                    />
+                }
             >
                 {/* Header */}
                 <View style={styles.header}>

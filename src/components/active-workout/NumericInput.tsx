@@ -39,7 +39,7 @@ export function NumericInput({
 
     // Local string state for text input
     const [inputValue, setInputValue] = useState(
-        allowDecimals ? value.toFixed(1) : value.toString()
+        allowDecimals ? Number(value.toFixed(2)).toString() : value.toString()
     );
     const [isFocused, setIsFocused] = useState(false);
 
@@ -47,7 +47,7 @@ export function NumericInput({
     const handleFocus = () => {
         setIsFocused(true);
         // Update input value to current value on focus
-        setInputValue(allowDecimals ? value.toFixed(1) : value.toString());
+        setInputValue(allowDecimals ? Number(value.toFixed(2)).toString() : value.toString());
         // Select all text after a brief delay (allows the input to render)
         setTimeout(() => {
             inputRef.current?.setSelection(0, inputValue.length + 10);
@@ -73,7 +73,7 @@ export function NumericInput({
         onChange(numValue);
 
         // Update local state with formatted value
-        setInputValue(allowDecimals ? numValue.toFixed(1) : numValue.toString());
+        setInputValue(allowDecimals ? Number(numValue.toFixed(2)).toString() : numValue.toString());
     };
 
     // Handle text change
@@ -81,8 +81,8 @@ export function NumericInput({
         // Replace comma with period for locales that use comma as decimal separator
         const normalizedText = text.replace(',', '.');
 
-        // Allow only numbers and optionally decimal point
-        const regex = allowDecimals ? /^[0-9]*\.?[0-9]*$/ : /^[0-9]*$/;
+        // Allow numbers and decimal point, max 2 decimal places
+        const regex = allowDecimals ? /^[0-9]*\.?[0-9]{0,2}$/ : /^[0-9]*$/;
         if (regex.test(normalizedText) || normalizedText === '') {
             setInputValue(normalizedText);
         }
@@ -91,7 +91,7 @@ export function NumericInput({
     // Sync with external value changes when not focused
     React.useEffect(() => {
         if (!isFocused) {
-            setInputValue(allowDecimals ? value.toFixed(1) : value.toString());
+            setInputValue(allowDecimals ? Number(value.toFixed(2)).toString() : value.toString());
         }
     }, [value, allowDecimals, isFocused]);
 
