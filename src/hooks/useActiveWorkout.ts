@@ -80,6 +80,8 @@ export interface UseActiveWorkoutReturn {
         cancelWorkout: () => Promise<void>;
         /** Refetch workout data */
         refetch: () => Promise<void>;
+        /** Waterfall auto-fill sets */
+        autoFillSets: (setId: string, field: 'weight' | 'reps', value: number) => void;
     };
 }
 
@@ -777,6 +779,65 @@ export function useActiveWorkout(
             finishWorkout,
             cancelWorkout,
             refetch: fetchActiveWorkout,
+            autoFillSets: useCallback(
+                (setId: string, field: 'weight' | 'reps', value: number) => {
+                    if (value <= 0) return;
+
+                    // find the exercise and set details first to know what to update
+                    let targetExerciseIndex = -1;
+                    let targetSetIndex = -1;
+                    let targetSets: WorkoutSet[] = [];
+
+                    if (!workout?.exercises) return;
+
+                    for (let i = 0; i < workout.exercises.length; i++) {
+                        const sets = workout.exercises[i].sets || [];
+                        const setIdx = sets.findIndex((s) => s.id === setId);
+                        if (setIdx !== -1) {
+                            targetExerciseIndex = i;
+                            targetSetIndex = setIdx;
+                            targetSets = sets;
+                            break;
+                        }
+                    }
+
+                    if (targetExerciseIndex === -1) return;
+
+                    // Optimistic update
+                    setWorkout((prev) => {
+                        if (!prev?.exercises) return prev;
+                        // Need to re-find in prev to be safe with state updates
+                        const currentExercise = prev.exercises[targetExerciseIndex];
+                        if (!currentExercise || !currentExercise.sets) return prev;
+
+                        const updatedSets = currentExercise.sets.map((set, index) => {
+                            if (index > targetSetIndex) {
+                                // Update subsequent sets
+                                return { ...set, [field]: value };
+                            }
+                            return set;
+                        });
+
+                        const updatedExercise = { ...currentExercise, sets: updatedSets };
+                        const updatedExercises = [...prev.exercises];
+                        updatedExercises[targetExerciseIndex] = updatedExercise;
+
+                        return { ...prev, exercises: updatedExercises };
+                    });
+
+                    // Persist changes
+                    // targetSets refers to the sets before update, but IDs are stable.
+                    targetSets.forEach((set, index) => {
+                        if (index > targetSetIndex) {
+                            // Update pending updates and trigger save
+                            const existing = pendingUpdates.current.get(set.id) || {};
+                            pendingUpdates.current.set(set.id, { ...existing, [field]: value });
+                            debouncedSaveSet(set.id, pendingUpdates.current.get(set.id)!);
+                        }
+                    });
+                },
+                [workout, debouncedSaveSet]
+            ),
         },
     };
 }

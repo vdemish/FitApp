@@ -31,6 +31,10 @@ interface SetRowProps {
     onWeightChange: (value: number) => void;
     /** Callback when reps changes */
     onRepsChange: (value: number) => void;
+    /** Callback when weight input is blurred */
+    onWeightBlur?: (value: number) => void;
+    /** Callback when reps input is blurred */
+    onRepsBlur?: (value: number) => void;
     /** Callback when distance changes */
     onDistanceChange?: (value: number) => void;
     /** Callback when duration changes */
@@ -59,6 +63,8 @@ export function SetRow({
     disabled = false,
     onWeightChange,
     onRepsChange,
+    onWeightBlur,
+    onRepsBlur,
     onDistanceChange,
     onDurationChange,
     onToggleComplete,
@@ -104,64 +110,24 @@ export function SetRow({
         }
     };
 
-    // Animation value for the pulse effect
-    const pulseAnim = useRef(new Animated.Value(0)).current;
-
     // Determine weight label based on tracking type
     const weightLabel = trackingType === 'weighted_bodyweight'
         ? `+${weightUnit.toUpperCase()}`
         : weightUnit.toUpperCase();
 
-    // Setup pulse animation (Active Set OR Active Timer)
-    useEffect(() => {
-        if (isActive || isTimerActive) {
-            const animation = Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, {
-                        toValue: 1,
-                        duration: 1500,
-                        useNativeDriver: false,
-                    }),
-                    Animated.timing(pulseAnim, {
-                        toValue: 0,
-                        duration: 1500,
-                        useNativeDriver: false,
-                    }),
-                ])
-            );
-            animation.start();
-            return () => animation.stop();
-        } else {
-            pulseAnim.setValue(0);
-        }
-    }, [isActive, isTimerActive, pulseAnim]);
-
-    // Interpolate values for animation
-    const borderColor = pulseAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [
-            themeColors.surface,
-            isTimerActive ? themeColors.success : themeColors.primary, // Green for timer
-        ],
-    });
-
-    // Shadow opacity for dark mode "glow"
-    const shadowOpacity = pulseAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 0.5],
-    });
-
-    const activeStyle = (isActive || isTimerActive)
+    const activeStyle = isActive
         ? {
-            borderColor: borderColor,
-            shadowColor: isTimerActive ? themeColors.success : themeColors.primary,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: isDark ? shadowOpacity : 0,
-            shadowRadius: 10,
-            elevation: 4,
+            backgroundColor: `${themeColors.success}33`, // success with 20% opacity (approx) or 33 hex = ~20%
+            borderColor: themeColors.success,
             borderWidth: 1,
         }
-        : {};
+        : isTimerActive
+            ? {
+                borderColor: themeColors.success,
+                borderWidth: 1,
+                // backgroundColor: `${themeColors.success}15`, // optional for timer active
+            }
+            : {};
 
     const isTimerType = trackingType === 'duration' || trackingType === 'distance_duration';
 
@@ -193,6 +159,7 @@ export function SetRow({
                             <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
+                                onBlur={onWeightBlur}
                                 // label={weightLabel}
                                 allowDecimals={true}
                                 max={500}
@@ -203,6 +170,7 @@ export function SetRow({
                             <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
+                                onBlur={onRepsBlur}
                                 // label="REPS"
                                 allowDecimals={false}
                                 max={999}
@@ -219,6 +187,7 @@ export function SetRow({
                             <NumericInput
                                 value={weight}
                                 onChange={onWeightChange}
+                                onBlur={onWeightBlur}
                                 // label={weightLabel}
                                 allowDecimals={true}
                                 max={200}
@@ -229,6 +198,7 @@ export function SetRow({
                             <NumericInput
                                 value={reps}
                                 onChange={onRepsChange}
+                                onBlur={onRepsBlur}
                                 // label="REPS"
                                 allowDecimals={false}
                                 max={999}
@@ -332,7 +302,7 @@ export function SetRow({
     };
 
     return (
-        <Animated.View
+        <View
             testID={testID}
             style={[
                 styles.container,
@@ -346,9 +316,9 @@ export function SetRow({
                 style={[
                     styles.setIndicator,
                     {
-                        borderColor: (isActive || isTimerActive) ? (isTimerActive ? themeColors.success : themeColors.primary) : themeColors.border,
+                        borderColor: (isActive || isTimerActive) ? (isActive || isTimerActive ? themeColors.success : themeColors.primary) : themeColors.border,
                         backgroundColor: (isActive || isTimerActive)
-                            ? (isTimerActive ? `${themeColors.success}15` : `${themeColors.primary}15`)
+                            ? (isActive ? themeColors.success : `${themeColors.success}15`)
                             : 'transparent',
                     },
                 ]}
@@ -358,7 +328,7 @@ export function SetRow({
                         styles.setNumber,
                         {
                             color: (isActive || isTimerActive)
-                                ? (isTimerActive ? themeColors.success : themeColors.primary)
+                                ? ((isActive && !isTimerActive) ? '#FFFFFF' : themeColors.success)
                                 : themeColors.textSecondary,
                         },
                     ]}
@@ -368,18 +338,20 @@ export function SetRow({
             </View>
 
             {/* Previous Best (optional) */}
-            {previousBest && (
-                <Text style={[styles.previousBest, { color: themeColors.textMuted }]}>
-                    {previousBest}
-                </Text>
-            )}
+            {
+                previousBest && (
+                    <Text style={[styles.previousBest, { color: themeColors.textMuted }]}>
+                        {previousBest}
+                    </Text>
+                )
+            }
 
             {/* Dynamic Inputs */}
             {renderInputs()}
 
             {/* Completion Action (Checkbox or Timer Button) */}
             {renderAction()}
-        </Animated.View>
+        </View >
     );
 }
 

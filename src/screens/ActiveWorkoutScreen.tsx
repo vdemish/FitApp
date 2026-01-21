@@ -322,6 +322,7 @@ export function ActiveWorkoutScreen() {
                                             handleSetChange(setId, field, value)
                                         }
                                         onToggleComplete={(setId) => handleToggleComplete(setId)}
+                                        onAutoFill={actions.autoFillSets}
                                         onMenuPress={() => {
                                             console.log('Menu pressed for:', item.name);
                                         }}

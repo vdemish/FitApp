@@ -38,6 +38,8 @@ interface ActiveExerciseCardProps {
     onSetChange?: (setId: string, field: 'weight' | 'reps' | 'distance' | 'durationSeconds', value: number) => void;
     /** Callback when set completion is toggled */
     onToggleComplete?: (setId: string) => void;
+    /** Callback for waterfall auto-fill */
+    onAutoFill?: (setId: string, field: 'weight' | 'reps', value: number) => void;
     /** Callback for menu button press */
     onMenuPress?: () => void;
     /** Weight unit label */
@@ -60,6 +62,7 @@ export function ActiveExerciseCard({
     onRemoveSet,
     onSetChange,
     onToggleComplete,
+    onAutoFill,
     onMenuPress,
     weightUnit = 'kg',
     distanceUnit = 'km',
@@ -171,6 +174,8 @@ export function ActiveExerciseCard({
                         distanceUnit={distanceUnit}
                         onWeightChange={(value) => onSetChange?.(set.id, 'weight', value)}
                         onRepsChange={(value) => onSetChange?.(set.id, 'reps', value)}
+                        onWeightBlur={(value) => onAutoFill?.(set.id, 'weight', value)}
+                        onRepsBlur={(value) => onAutoFill?.(set.id, 'reps', value)}
                         onDistanceChange={(value) => onSetChange?.(set.id, 'distance', value)}
                         onDurationChange={(value) => onSetChange?.(set.id, 'durationSeconds', value)}
                         onToggleComplete={() => onToggleComplete?.(set.id)}

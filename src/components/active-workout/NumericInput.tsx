@@ -23,6 +23,8 @@ interface NumericInputProps {
     max?: number;
     /** ID for testing */
     testID?: string;
+    /** Callback when input is blurred */
+    onBlur?: (value: number) => void;
 }
 
 export function NumericInput({
@@ -33,6 +35,7 @@ export function NumericInput({
     min = 0,
     max = 9999,
     testID,
+    onBlur,
 }: NumericInputProps) {
     const themeColors = useThemeColors();
     const inputRef = useRef<TextInput>(null);
@@ -71,6 +74,9 @@ export function NumericInput({
 
         // Update parent
         onChange(numValue);
+
+        // Trigger onBlur callback if provided
+        onBlur?.(numValue);
 
         // Update local state with formatted value
         setInputValue(allowDecimals ? Number(numValue.toFixed(2)).toString() : numValue.toString());
