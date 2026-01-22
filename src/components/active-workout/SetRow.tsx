@@ -86,6 +86,7 @@ export function SetRow({
         finishTimer
     } = useSetTimer({
         initialDuration: durationSeconds,
+        label: `Set ${setNumber}`,
         onComplete: () => {
             // Auto-complete set when countdown reaches 0
             // We don't trigger finishTimer here as we want the user to consciously finish/save?

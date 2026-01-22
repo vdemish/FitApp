@@ -7,9 +7,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { AppState } from 'react-native';
 import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, Exercise, ExerciseTrackingType } from '@/types';
 import * as workoutService from '@/services/workoutService';
 import type { SetData } from '@/components/active-workout';
+import {
+    clearRestTimerState,
+    loadRestTimerState,
+    saveRestTimerState,
+    updateRestTimerState,
+} from '@/services/TimerStateStore';
 
 // ============================================================================
 // TYPES
@@ -200,6 +207,49 @@ export function useActiveWorkout(
     );
     const previousWorkoutState = useRef<Workout | null>(null);
 
+    const rehydrateRestTimer = useCallback(async () => {
+        if (timerState.isActive) return;
+        const stored = await loadRestTimerState();
+        if (!stored || stored.status !== 'running' || !stored.endAtMs || !stored.durationMs) {
+            return;
+        }
+
+        const now = Date.now();
+        const remainingMs = stored.endAtMs - now;
+        if (remainingMs <= 0) {
+            await clearRestTimerState();
+            setTimerState((prev) => ({
+                ...prev,
+                isActive: false,
+                lastCompletedSetTimestamp: null,
+                exerciseId: null,
+            }));
+            return;
+        }
+
+        setTimerState({
+            isActive: true,
+            lastCompletedSetTimestamp: stored.endAtMs - stored.durationMs,
+            exerciseId: stored.exerciseId ?? null,
+            restSeconds: Math.ceil(stored.durationMs / 1000),
+        });
+    }, [timerState.isActive]);
+
+    useEffect(() => {
+        if (isLoading) return;
+        rehydrateRestTimer();
+    }, [isLoading, workout?.id, rehydrateRestTimer]);
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active') {
+                rehydrateRestTimer();
+            }
+        });
+
+        return () => subscription.remove();
+    }, [rehydrateRestTimer]);
+
     // Create debounced save function
     const debouncedSaveSet = useMemo(
         () =>
@@ -381,11 +431,22 @@ export function useActiveWorkout(
 
             // Trigger rest timer if completing a set
             if (isCompleting) {
+                const startTimestamp = Date.now();
+                const durationMs = targetExercise.rest_seconds * 1000;
                 setTimerState({
                     isActive: true,
-                    lastCompletedSetTimestamp: Date.now(),
+                    lastCompletedSetTimestamp: startTimestamp,
                     exerciseId: targetExercise.id,
                     restSeconds: targetExercise.rest_seconds,
+                });
+                saveRestTimerState({
+                    status: 'running',
+                    phase: 'rest',
+                    endAtMs: startTimestamp + durationMs,
+                    remainingMs: null,
+                    durationMs,
+                    scheduledNotificationIds: [],
+                    exerciseId: targetExercise.id,
                 });
             }
 
@@ -739,13 +800,25 @@ export function useActiveWorkout(
             exerciseId: null,
             restSeconds: 90,
         });
+        clearRestTimerState();
     }, []);
 
     const addRestTime = useCallback((seconds: number) => {
-        setTimerState((prev) => ({
-            ...prev,
-            restSeconds: prev.restSeconds + seconds,
-        }));
+        setTimerState((prev) => {
+            const nextRestSeconds = prev.restSeconds + seconds;
+            if (prev.isActive && prev.lastCompletedSetTimestamp) {
+                const endAtMs = prev.lastCompletedSetTimestamp + nextRestSeconds * 1000;
+                updateRestTimerState({
+                    endAtMs,
+                    durationMs: nextRestSeconds * 1000,
+                });
+            }
+
+            return {
+                ...prev,
+                restSeconds: nextRestSeconds,
+            };
+        });
     }, []);
 
     // ========================================================================

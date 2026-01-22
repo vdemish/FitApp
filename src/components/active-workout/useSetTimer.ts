@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Alert, AppState, Linking, type AlertButton } from 'react-native';
+import { playCountdownSound, prepareCountdownSound } from '@/services/SoundService';
+import {
+    cancelTimerNotifications,
+    scheduleTimerNotifications,
+} from '@/services/TimerNotificationService';
 
 type TimerMode = 'countdown' | 'stopwatch';
 
 interface UseSetTimerProps {
     initialDuration?: number;
     onComplete?: () => void;
+    label?: string;
 }
 
 interface UseSetTimerReturn {
@@ -17,7 +24,11 @@ interface UseSetTimerReturn {
     finishTimer: () => number; // Returns total logged time
 }
 
-export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProps = {}): UseSetTimerReturn {
+export function useSetTimer({
+    initialDuration = 0,
+    onComplete,
+    label,
+}: UseSetTimerProps = {}): UseSetTimerReturn {
     const [isActive, setIsActive] = useState(false);
     const [elapsed, setElapsed] = useState(0); // Time elapsed since start
     const [startTime, setStartTime] = useState<number | null>(null);
@@ -25,6 +36,9 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
     const [mode, setMode] = useState<TimerMode>('stopwatch');
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const notificationIds = useRef<string[]>([]);
+    const permissionPromptedRef = useRef(false);
+    const endSoundPlayedRef = useRef(false);
 
     // Calculate remaining for countdown
     const remaining = Math.max(0, targetTime - elapsed);
@@ -36,6 +50,9 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
         }
         setIsActive(false);
         setStartTime(null);
+        cancelTimerNotifications(notificationIds.current);
+        notificationIds.current = [];
+        endSoundPlayedRef.current = false;
     }, []);
 
     const finishTimer = useCallback(() => {
@@ -67,6 +84,7 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
         setStartTime(now);
         setIsActive(true);
         setElapsed(0); // Reset elapsed on new start
+        endSoundPlayedRef.current = false;
 
         // Use passed target time OR fallback to current state (which should be synced with prop)
         const effectiveTarget = newTargetTime !== undefined ? newTargetTime : targetTime;
@@ -74,6 +92,28 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
         if (effectiveTarget > 0) {
             setMode('countdown');
             setTargetTime(effectiveTarget);
+            scheduleTimerNotifications({
+                startTimeMs: now,
+                durationSeconds: effectiveTarget,
+                label,
+            }).then((result) => {
+                notificationIds.current = result.ids;
+                if (!result.granted && !permissionPromptedRef.current) {
+                    permissionPromptedRef.current = true;
+                    const actions: AlertButton[] = result.canAskAgain
+                        ? [{ text: 'OK' }]
+                        : [
+                            { text: 'Cancel', style: 'cancel' as const },
+                            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                        ];
+
+                    Alert.alert(
+                        'Notifications Disabled',
+                        'Enable notifications to hear timer sounds while the app is in the background or locked.',
+                        actions
+                    );
+                }
+            });
         } else {
             setMode('stopwatch');
             setTargetTime(0);
@@ -89,15 +129,25 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
                 // Timer reached 0
                 if (intervalRef.current) clearInterval(intervalRef.current);
                 setIsActive(false);
+                cancelTimerNotifications(notificationIds.current);
+                notificationIds.current = [];
                 // Ensure we hit exactly 0 remaining
                 setElapsed(effectiveTarget);
+                if (!endSoundPlayedRef.current && AppState.currentState === 'active') {
+                    endSoundPlayedRef.current = true;
+                    playCountdownSound();
+                }
                 if (onComplete) onComplete();
             }
         }, 1000);
 
-    }, [isActive, onComplete, stopTimer, targetTime]);
+    }, [isActive, onComplete, stopTimer, targetTime, label]);
 
     // Sync state with prop if updated externally (and timer not running)
+    useEffect(() => {
+        prepareCountdownSound();
+    }, []);
+
     useEffect(() => {
         if (!isActive && initialDuration !== undefined) {
             setTargetTime(initialDuration);
@@ -109,6 +159,10 @@ export function useSetTimer({ initialDuration = 0, onComplete }: UseSetTimerProp
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
+            }
+            if (notificationIds.current.length > 0) {
+                cancelTimerNotifications(notificationIds.current);
+                notificationIds.current = [];
             }
         };
     }, []);

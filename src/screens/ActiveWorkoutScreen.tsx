@@ -139,7 +139,8 @@ export function ActiveWorkoutScreen() {
         isActive: timerState.isActive,
         duration: timerState.restSeconds,
         startTime: timerState.lastCompletedSetTimestamp,
-        onComplete: actions.dismissTimer
+        onComplete: actions.dismissTimer,
+        label: 'Rest',
     });
 
     // Render loading state

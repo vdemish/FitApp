@@ -1,17 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AppState, AppStateStatus, Platform } from 'react-native';
-import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
-import * as Notifications from 'expo-notifications';
+import { Alert, AppState, Linking, type AlertButton } from 'react-native';
 import { triggerTimerTick, triggerSuccess } from '@/utils/haptics';
-
-// Configure notifications
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-    }),
-});
+import { playCountdownSound, prepareCountdownSound } from '@/services/SoundService';
+import {
+    cancelTimerNotifications,
+    scheduleTimerNotifications,
+} from '@/services/TimerNotificationService';
+import { updateRestTimerState } from '@/services/TimerStateStore';
 
 interface UseWorkoutTimerProps {
     /** Is the timer running? */
@@ -22,65 +17,78 @@ interface UseWorkoutTimerProps {
     onComplete: () => void;
     /** Optional timestamp to sync with (e.g., from DB) */
     startTime?: number | null;
+    /** Optional label for notifications */
+    label?: string;
 }
 
 export function useWorkoutTimer({
     isActive,
     duration,
     onComplete,
-    startTime
+    startTime,
+    label,
 }: UseWorkoutTimerProps) {
     const [remainingTime, setRemainingTime] = useState(0);
-    const soundRef = useRef<Audio.Sound | null>(null);
-    const appState = useRef(AppState.currentState);
-    const notificationId = useRef<string | null>(null);
+    const notificationIds = useRef<string[]>([]);
+    const permissionPromptedRef = useRef(false);
+    const endSoundPlayedRef = useRef(false);
 
-    // Initial Load & Audio Setup
     useEffect(() => {
-        async function setupAudio() {
-            try {
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: false,
-                    staysActiveInBackground: true,
-                    interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
-                    playsInSilentModeIOS: true,
-                    shouldDuckAndroid: true,
-                    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-                    playThroughEarpieceAndroid: false,
-                });
-
-                const { sound } = await Audio.Sound.createAsync(
-                    require('../../assets/sounds/countdown.mp3'),
-                    { shouldPlay: false }
-                );
-                soundRef.current = sound;
-            } catch (error) {
-                console.error('Error loading sound:', error);
-            }
-        }
-
-        setupAudio();
-
-        return () => {
-            if (soundRef.current) {
-                soundRef.current.unloadAsync();
-            }
-        };
+        prepareCountdownSound();
     }, []);
+
+    const cancelNotifications = useCallback(async () => {
+        if (notificationIds.current.length === 0) return;
+        await cancelTimerNotifications(notificationIds.current);
+        notificationIds.current = [];
+        updateRestTimerState({ scheduledNotificationIds: [] });
+    }, []);
+
+    const scheduleNotifications = useCallback(
+        async (startTimestamp: number, durationSeconds: number) => {
+            await cancelNotifications();
+            const result = await scheduleTimerNotifications({
+                startTimeMs: startTimestamp,
+                durationSeconds,
+                label,
+            });
+            notificationIds.current = result.ids;
+            updateRestTimerState({ scheduledNotificationIds: result.ids });
+
+            if (!result.granted && !permissionPromptedRef.current) {
+                permissionPromptedRef.current = true;
+                const actions: AlertButton[] = result.canAskAgain
+                    ? [{ text: 'OK' }]
+                    : [
+                        { text: 'Cancel', style: 'cancel' as const },
+                        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                    ];
+
+                Alert.alert(
+                    'Notifications Disabled',
+                    'Enable notifications to hear timer sounds while the app is in the background or locked.',
+                    actions
+                );
+            }
+        },
+        [cancelNotifications, label]
+    );
 
     // Timer Logic
     useEffect(() => {
         if (!isActive) {
             setRemainingTime(0);
-            cancelNotification();
+            cancelNotifications();
+            endSoundPlayedRef.current = false;
             return;
         }
 
         const startTimestamp = startTime || Date.now();
         const endTimestamp = startTimestamp + (duration * 1000);
+        endSoundPlayedRef.current = false;
 
-        // Schedule notification immediate when active
-        scheduleNotification(duration);
+        // Schedule notification immediately when active
+        scheduleNotifications(startTimestamp, duration);
 
         const updateTimer = async () => {
             const now = Date.now();
@@ -96,8 +104,12 @@ export function useWorkoutTimer({
             });
 
             if (timeLeft <= 0) {
+                if (!endSoundPlayedRef.current && AppState.currentState === 'active') {
+                    endSoundPlayedRef.current = true;
+                    await playCountdownSound();
+                }
                 onComplete();
-                cancelNotification();
+                cancelNotifications();
             }
         };
 
@@ -108,65 +120,23 @@ export function useWorkoutTimer({
 
         return () => {
             clearInterval(interval);
-            cancelNotification();
+            cancelNotifications();
         };
-    }, [isActive, duration, startTime, onComplete]);
+    }, [isActive, duration, startTime, onComplete, scheduleNotifications, cancelNotifications]);
 
-    // Handle Ticks & Sounds
+    // Handle Ticks & Haptics
     const lastTickRef = useRef<number>(-1);
 
-    const handleTicks = useCallback(async (seconds: number) => {
+    const handleTicks = useCallback((seconds: number) => {
         if (seconds === lastTickRef.current) return;
         lastTickRef.current = seconds;
 
-        // Sound at T-3s
-        if (seconds === 3 && soundRef.current) {
-            try {
-                // Replay from start if already played
-                await soundRef.current.setPositionAsync(0);
-                await soundRef.current.playAsync();
-            } catch (error) {
-                console.log('Error playing sound', error);
-            }
-        }
-
-        // Haptics
         if (seconds <= 5 && seconds > 0) {
             triggerTimerTick();
         } else if (seconds === 0) {
             triggerSuccess();
         }
     }, []);
-
-    // Notifications Helpers
-    const scheduleNotification = async (seconds: number) => {
-        // Prevent duplicates
-        if (notificationId.current) return;
-
-        try {
-            const id = await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: "Timer Complete",
-                    body: "Time to get back to work!",
-                    sound: true,
-                },
-                trigger: {
-                    seconds: seconds,
-                    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
-                },
-            });
-            notificationId.current = id;
-        } catch (e) {
-            console.log("Failed to schedule notification", e);
-        }
-    };
-
-    const cancelNotification = async () => {
-        if (notificationId.current) {
-            await Notifications.cancelScheduledNotificationAsync(notificationId.current);
-            notificationId.current = null;
-        }
-    };
 
     return { remainingTime };
 }
