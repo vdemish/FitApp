@@ -3,7 +3,7 @@
  * Contains three sections: History, Templates, and Exercise Selection
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -13,12 +13,14 @@ import {
     Pressable,
     ActivityIndicator,
     Dimensions,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label, Input } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components/CategoryPill';
 import { useWorkoutHistory, useWorkoutTemplates, useExercises, useThemeColors } from '@/hooks';
+import { deleteWorkoutTemplate } from '@/services/workoutService';
 import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise, Workout, WorkoutTemplate, SelectedExercise } from '@/types';
@@ -43,6 +45,8 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
     const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
+    const [templateIdForDelete, setTemplateIdForDelete] = useState<string | null>(null);
+    const ignoreClearTemplateRef = useRef(false);
     const selectedExercisesById = useMemo(
         () => new Map(selectedExercises.map(exercise => [exercise.id, exercise])),
         [selectedExercises]
@@ -145,6 +149,33 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         onStartWorkout?.({ templateId: template.id });
     };
 
+    const handleDeleteTemplate = useCallback((template: WorkoutTemplate) => {
+        if (template.is_system) return;
+
+        triggerSelection();
+        Alert.alert(
+            'Are you sure?',
+            `Delete template "${template.name}"?`,
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteWorkoutTemplate(template.id);
+                            await refetchTemplates();
+                            setTemplateIdForDelete(null);
+                        } catch (err) {
+                            console.error(err);
+                            Alert.alert('Error', 'Failed to delete template');
+                        }
+                    },
+                },
+            ]
+        );
+    }, [refetchTemplates]);
+
     // Handle start with selected exercises
     const handleStartWithExercises = () => {
         console.log('[StartWorkoutModal] Starting with exercises:', selectedExercises.map(e => e.name));
@@ -208,6 +239,13 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    onTouchStart={() => {
+                        if (ignoreClearTemplateRef.current) {
+                            ignoreClearTemplateRef.current = false;
+                            return;
+                        }
+                        setTemplateIdForDelete(null);
+                    }}
                 >
                     {/* Section A: Your History */}
                     {!historyLoading && historyWorkouts.length > 0 && (
@@ -246,9 +284,30 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                     <GlassCard
                                         key={template.id}
                                         style={styles.templateCard}
-                                        onPress={() => handleStartFromTemplate(template)}
+                                        onPress={() => {
+                                            setTemplateIdForDelete(null);
+                                            handleStartFromTemplate(template);
+                                        }}
                                         onPressIn={() => triggerSelection()}
+                                        onLongPress={() => {
+                                            if (template.is_system) return;
+                                            triggerSelection();
+                                            setTemplateIdForDelete((prev) =>
+                                                prev === template.id ? null : template.id
+                                            );
+                                        }}
                                     >
+                                        {templateIdForDelete === template.id && !template.is_system && (
+                                            <Pressable
+                                                onPressIn={() => {
+                                                    ignoreClearTemplateRef.current = true;
+                                                }}
+                                                onPress={() => handleDeleteTemplate(template)}
+                                                style={styles.templateDeleteButton}
+                                            >
+                                                <Text style={styles.templateDeleteText}>Delete</Text>
+                                            </Pressable>
+                                        )}
                                         <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
                                         <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
                                             {template.name}
@@ -488,6 +547,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 110,
+    },
+    templateDeleteButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: colors.error,
+        borderRadius: radius.full,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+    },
+    templateDeleteText: {
+        color: colors.white,
+        fontSize: 12,
+        fontWeight: '600',
     },
     templateEmoji: {
         fontSize: 28,

@@ -66,6 +66,7 @@ export interface WorkoutTemplate {
     name: string;
     icon: string;
     is_system: boolean;
+    is_deleted?: boolean;
     created_at: string;
     exercises?: TemplateExercise[]; // Присоединённые данные
 }

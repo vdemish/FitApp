@@ -3,19 +3,19 @@
  * Connected to real database via useExercises hook
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components';
 import { useExercises, useThemeColors, useWorkoutTemplates } from '@/hooks';
-import { saveNewTemplate } from '@/services/workoutService';
+import { deleteWorkoutTemplate, saveNewTemplate } from '@/services/workoutService';
 import { triggerSelection, triggerImpact } from '@/utils/haptics';
 import { colors, spacing, radius } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Exercise, SelectedExercise } from '@/types';
+import type { Exercise, SelectedExercise, WorkoutTemplate } from '@/types';
 
 type RootStackParamList = {
     ActiveWorkout: { templateId?: string; exercises?: SelectedExercise[] };
@@ -46,6 +46,8 @@ export function LibraryScreen() {
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [templateIdForDelete, setTemplateIdForDelete] = useState<string | null>(null);
+    const ignoreClearTemplateRef = useRef(false);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -194,6 +196,30 @@ export function LibraryScreen() {
         }
     };
 
+    const handleDeleteTemplate = useCallback(async (template: WorkoutTemplate) => {
+        Alert.alert(
+            'Are you sure?',
+            `Delete template "${template.name}"?`,
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteWorkoutTemplate(template.id);
+                            await refetchTemplates();
+                            setTemplateIdForDelete(null);
+                        } catch (err) {
+                            console.error(err);
+                            Alert.alert('Error', 'Failed to delete template');
+                        }
+                    },
+                },
+            ]
+        );
+    }, [refetchTemplates]);
+
     const renderExerciseCard = (exercise: Exercise, highlighted = false) => {
         const selectedExercise = selectedExercisesById.get(exercise.id);
         const selected = !!selectedExercise;
@@ -324,6 +350,13 @@ export function LibraryScreen() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                onTouchStart={() => {
+                    if (ignoreClearTemplateRef.current) {
+                        ignoreClearTemplateRef.current = false;
+                        return;
+                    }
+                    setTemplateIdForDelete(null);
+                }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -404,9 +437,27 @@ export function LibraryScreen() {
                                     style={styles.templateCard}
                                     onPress={() => {
                                         triggerSelection();
+                                        setTemplateIdForDelete(null);
                                         navigation.navigate('ActiveWorkout', { templateId: template.id });
                                     }}
+                                    onLongPress={() => {
+                                        triggerSelection();
+                                        setTemplateIdForDelete((prev) =>
+                                            prev === template.id ? null : template.id
+                                        );
+                                    }}
                                 >
+                                    {templateIdForDelete === template.id && (
+                                        <Pressable
+                                            onPressIn={() => {
+                                                ignoreClearTemplateRef.current = true;
+                                            }}
+                                            onPress={() => handleDeleteTemplate(template)}
+                                            style={styles.templateDeleteButton}
+                                        >
+                                            <Text style={styles.templateDeleteText}>Delete</Text>
+                                        </Pressable>
+                                    )}
                                     <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
                                     <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
                                         {template.name}
@@ -592,6 +643,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
+    },
+    templateDeleteButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: colors.error,
+        borderRadius: radius.full,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+    },
+    templateDeleteText: {
+        color: colors.white,
+        fontSize: 12,
+        fontWeight: '600',
     },
     templateEmoji: {
         fontSize: 32,

@@ -28,6 +28,8 @@ interface GlassCardProps {
     style?: StyleProp<ViewStyle>;
     /** Обработчик нажатия */
     onPress?: () => void;
+    /** Обработчик долгого нажатия */
+    onLongPress?: () => void;
     /** Обработчик нажатия (начало) */
     onPressIn?: () => void;
     /** ID для тестирования */
@@ -48,6 +50,7 @@ export function GlassCard({
     accent = 'none',
     style,
     onPress,
+    onLongPress,
     onPressIn,
     testID,
 }: GlassCardProps) {
@@ -103,6 +106,7 @@ export function GlassCard({
                     pressed && styles.pressed,
                 ]}
                 onPress={onPress}
+                onLongPress={onLongPress}
                 onPressIn={onPressIn}
             >
                 {children}

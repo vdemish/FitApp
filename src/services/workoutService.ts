@@ -116,6 +116,7 @@ export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]
                 exercise:exercises(*)
             )
         `)
+        .eq('is_deleted', false)
         .or(`user_id.eq.${user?.id || ''},is_system.eq.true`)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -255,6 +256,21 @@ export async function updateTemplateExercises(
     if (insertError) {
         console.error('[WorkoutService] Ошибка обновления упражнений шаблона:', insertError.message);
         throw insertError;
+    }
+}
+
+/**
+ * Удаляет пользовательский шаблон тренировки
+ */
+export async function deleteWorkoutTemplate(templateId: string): Promise<void> {
+    const { error: templateError } = await supabase
+        .from('workout_templates')
+        .update({ is_deleted: true })
+        .eq('id', templateId);
+
+    if (templateError) {
+        console.error('[WorkoutService] Ошибка удаления шаблона:', templateError.message);
+        throw templateError;
     }
 }
 
