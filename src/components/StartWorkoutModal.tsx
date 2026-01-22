@@ -21,15 +21,17 @@ import { CategoryPill } from '@/components/CategoryPill';
 import { useWorkoutHistory, useWorkoutTemplates, useExercises, useThemeColors } from '@/hooks';
 import { triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
-import type { Exercise, Workout, WorkoutTemplate } from '@/types';
+import type { Exercise, Workout, WorkoutTemplate, SelectedExercise } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const MIN_SETS = 1;
+const MAX_SETS = 19;
 
 interface StartWorkoutModalProps {
     visible: boolean;
     onClose: () => void;
     /** Called when user wants to start a workout */
-    onStartWorkout?: (params: { templateId?: string; workoutId?: string; exercises?: Exercise[] }) => void;
+    onStartWorkout?: (params: { templateId?: string; workoutId?: string; exercises?: SelectedExercise[] }) => void;
 }
 
 export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWorkoutModalProps) {
@@ -38,9 +40,13 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
     const { templates, loading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more templates for scrolling
     const { exercises, muscleGroups, loading: exercisesLoading } = useExercises();
 
-    const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+    const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState<string | null>(null);
+    const selectedExercisesById = useMemo(
+        () => new Map(selectedExercises.map(exercise => [exercise.id, exercise])),
+        [selectedExercises]
+    );
 
     // Refetch data when modal opens
     React.useEffect(() => {
@@ -59,6 +65,19 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         exerciseIcon: {
             backgroundColor: themeColors.surface,
             borderColor: themeColors.border
+        },
+        setButton: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        setButtonText: {
+            color: themeColors.textPrimary,
+        },
+        setCountText: {
+            color: themeColors.textPrimary,
+        },
+        setLabelText: {
+            color: themeColors.textMuted,
         },
         floatingButtonContainer: {
             backgroundColor: themeColors.background,
@@ -86,21 +105,30 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
     }, [exercises, searchQuery, selectedMuscleGroupId]);
 
     // Toggle exercise selection
+    const clampSets = useCallback(
+        (value: number) => Math.min(MAX_SETS, Math.max(MIN_SETS, value)),
+        []
+    );
+
     const toggleExerciseSelection = useCallback((exercise: Exercise) => {
         setSelectedExercises(prev => {
             const isSelected = prev.some(e => e.id === exercise.id);
             if (isSelected) {
                 return prev.filter(e => e.id !== exercise.id);
-            } else {
-                return [...prev, exercise];
             }
+            return [...prev, { ...exercise, target_sets: MIN_SETS }];
         });
     }, []);
 
-    // Check if exercise is selected
-    const isExerciseSelected = useCallback((exerciseId: string) => {
-        return selectedExercises.some(e => e.id === exerciseId);
-    }, [selectedExercises]);
+    const updateExerciseSets = useCallback((exerciseId: string, delta: number) => {
+        setSelectedExercises(prev =>
+            prev.map(exercise =>
+                exercise.id === exerciseId
+                    ? { ...exercise, target_sets: clampSets((exercise.target_sets ?? MIN_SETS) + delta) }
+                    : exercise
+            )
+        );
+    }, [clampSets]);
 
     // Handle start from history
     const handleStartFromHistory = (workout: Workout) => {
@@ -279,7 +307,9 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                         ) : (
                             <View style={styles.exerciseList}>
                                 {filteredExercises.map((exercise) => {
-                                    const selected = isExerciseSelected(exercise.id);
+                                    const selectedExercise = selectedExercisesById.get(exercise.id);
+                                    const selected = !!selectedExercise;
+                                    const setCount = selectedExercise?.target_sets ?? MIN_SETS;
                                     return (
                                         <GlassCard
                                             key={exercise.id}
@@ -302,8 +332,45 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                                 <UIText variant="body-sm" muted>{exercise.muscle_group?.name || 'Unknown'}</UIText>
                                             </View>
                                             {selected && (
-                                                <View style={styles.checkmark}>
-                                                    <Text style={styles.checkmarkText}>✓</Text>
+                                                <View style={styles.setsControl}>
+                                                    <UIText variant="caption" style={[styles.setsLabel, dynamicStyles.setLabelText]}>
+                                                        Sets
+                                                    </UIText>
+                                                    <View style={styles.setsStepper}>
+                                                        <Pressable
+                                                            onPress={(event) => {
+                                                                event.stopPropagation();
+                                                                triggerSelection();
+                                                                updateExerciseSets(exercise.id, -1);
+                                                            }}
+                                                            disabled={setCount <= MIN_SETS}
+                                                            style={[
+                                                                styles.setButton,
+                                                                dynamicStyles.setButton,
+                                                                setCount <= MIN_SETS && styles.setButtonDisabled,
+                                                            ]}
+                                                        >
+                                                            <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>-</Text>
+                                                        </Pressable>
+                                                        <Text style={[styles.setCountText, dynamicStyles.setCountText]}>
+                                                            {setCount}
+                                                        </Text>
+                                                        <Pressable
+                                                            onPress={(event) => {
+                                                                event.stopPropagation();
+                                                                triggerSelection();
+                                                                updateExerciseSets(exercise.id, 1);
+                                                            }}
+                                                            disabled={setCount >= MAX_SETS}
+                                                            style={[
+                                                                styles.setButton,
+                                                                dynamicStyles.setButton,
+                                                                setCount >= MAX_SETS && styles.setButtonDisabled,
+                                                            ]}
+                                                        >
+                                                            <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>+</Text>
+                                                        </Pressable>
+                                                    </View>
                                                 </View>
                                             )}
                                         </GlassCard>
@@ -479,18 +546,38 @@ const styles = StyleSheet.create({
     exerciseInfo: {
         flex: 1,
     },
-    checkmark: {
+    setsControl: {
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    setsLabel: {
+        fontSize: 12,
+    },
+    setsStepper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    setButton: {
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: colors.primary.DEFAULT,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    checkmarkText: {
-        color: colors.white,
+    setButtonDisabled: {
+        opacity: 0.4,
+    },
+    setButtonText: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
+    },
+    setCountText: {
+        minWidth: 20,
+        textAlign: 'center',
+        fontSize: 16,
+        fontWeight: '600',
     },
 
     // Floating Button

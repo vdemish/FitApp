@@ -15,16 +15,19 @@ import { triggerSelection, triggerImpact } from '@/utils/haptics';
 import { colors, spacing, radius } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Exercise, WorkoutTemplate } from '@/types';
+import type { Exercise, SelectedExercise } from '@/types';
 
 type RootStackParamList = {
-    ActiveWorkout: { templateId?: string; exercises?: Exercise[] };
+    ActiveWorkout: { templateId?: string; exercises?: SelectedExercise[] };
 };
+
+const MIN_SETS = 1;
+const MAX_SETS = 19;
 
 export function LibraryScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { exercises, muscleGroups, loading, error, refetch: refetchExercises } = useExercises();
-    const { templates, loading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more for library view
+    const { templates, refetch: refetchTemplates } = useWorkoutTemplates(50); // Fetch more for library view
     const themeColors = useThemeColors();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -33,7 +36,11 @@ export function LibraryScreen() {
 
     // Selection Mode State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
-    const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+    const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
+    const selectedExercisesById = useMemo(
+        () => new Map(selectedExercises.map(exercise => [exercise.id, exercise])),
+        [selectedExercises]
+    );
 
     // Save Modal State
     const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
@@ -66,6 +73,19 @@ export function LibraryScreen() {
         modalOverlay: { backgroundColor: 'rgba(0,0,0,0.5)' },
         modalContent: { backgroundColor: themeColors.surface },
         checkbox: { borderColor: themeColors.textMuted },
+        setButton: {
+            backgroundColor: themeColors.surface,
+            borderColor: themeColors.border,
+        },
+        setButtonText: {
+            color: themeColors.textPrimary,
+        },
+        setCountText: {
+            color: themeColors.textPrimary,
+        },
+        setLabelText: {
+            color: themeColors.textMuted,
+        },
     }), [themeColors]);
 
     // My Templates (User created only)
@@ -118,11 +138,24 @@ export function LibraryScreen() {
             if (exists) {
                 return prev.filter(e => e.id !== exercise.id);
             }
-            return [...prev, exercise];
+            return [...prev, { ...exercise, target_sets: MIN_SETS }];
         });
     };
 
-    const isSelected = (id: string) => !!selectedExercises.find(e => e.id === id);
+    const clampSets = useCallback(
+        (value: number) => Math.min(MAX_SETS, Math.max(MIN_SETS, value)),
+        []
+    );
+
+    const updateExerciseSets = useCallback((exerciseId: string, delta: number) => {
+        setSelectedExercises(prev =>
+            prev.map(exercise =>
+                exercise.id === exerciseId
+                    ? { ...exercise, target_sets: clampSets((exercise.target_sets ?? MIN_SETS) + delta) }
+                    : exercise
+            )
+        );
+    }, [clampSets]);
 
     // Save Template Handler
     const handleSaveTemplate = async () => {
@@ -137,7 +170,7 @@ export function LibraryScreen() {
                 exercise_id: ex.id,
                 sort_order: index,
                 // Default values
-                target_sets: 3,
+                target_sets: ex.target_sets ?? MIN_SETS,
                 rest_seconds: 90
             }));
 
@@ -162,7 +195,9 @@ export function LibraryScreen() {
     };
 
     const renderExerciseCard = (exercise: Exercise, highlighted = false) => {
-        const selected = isSelected(exercise.id);
+        const selectedExercise = selectedExercisesById.get(exercise.id);
+        const selected = !!selectedExercise;
+        const setCount = selectedExercise?.target_sets ?? MIN_SETS;
 
         return (
             <GlassCard
@@ -197,13 +232,56 @@ export function LibraryScreen() {
                 </View>
 
                 {isSelectionMode ? (
-                    <View style={[
-                        styles.checkbox,
-                        dynamicStyles.checkbox,
-                        selected && styles.checkboxSelected
-                    ]}>
-                        {selected && <Text style={styles.checkmarkText}>✓</Text>}
-                    </View>
+                    selected ? (
+                        <View style={styles.setsControl}>
+                            <UIText variant="caption" style={[styles.setsLabel, dynamicStyles.setLabelText]}>
+                                Sets
+                            </UIText>
+                            <View style={styles.setsStepper}>
+                                <Pressable
+                                    onPress={(event) => {
+                                        event.stopPropagation();
+                                        triggerSelection();
+                                        updateExerciseSets(exercise.id, -1);
+                                    }}
+                                    disabled={setCount <= MIN_SETS}
+                                    style={[
+                                        styles.setButton,
+                                        dynamicStyles.setButton,
+                                        setCount <= MIN_SETS && styles.setButtonDisabled,
+                                    ]}
+                                >
+                                    <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>-</Text>
+                                </Pressable>
+                                <Text style={[styles.setCountText, dynamicStyles.setCountText]}>
+                                    {setCount}
+                                </Text>
+                                <Pressable
+                                    onPress={(event) => {
+                                        event.stopPropagation();
+                                        triggerSelection();
+                                        updateExerciseSets(exercise.id, 1);
+                                    }}
+                                    disabled={setCount >= MAX_SETS}
+                                    style={[
+                                        styles.setButton,
+                                        dynamicStyles.setButton,
+                                        setCount >= MAX_SETS && styles.setButtonDisabled,
+                                    ]}
+                                >
+                                    <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>+</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={[
+                            styles.checkbox,
+                            dynamicStyles.checkbox,
+                            selected && styles.checkboxSelected
+                        ]}>
+                            {selected && <Text style={styles.checkmarkText}>✓</Text>}
+                        </View>
+                    )
                 ) : (
                     <Text style={[styles.chevron, dynamicStyles.chevron]}>›</Text>
                 )}
@@ -578,6 +656,39 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 14,
         fontWeight: 'bold',
+    },
+    setsControl: {
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    setsLabel: {
+        fontSize: 12,
+    },
+    setsStepper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    setButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    setButtonDisabled: {
+        opacity: 0.4,
+    },
+    setButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    setCountText: {
+        minWidth: 20,
+        textAlign: 'center',
+        fontSize: 16,
+        fontWeight: '600',
     },
 
     // Floating Bar

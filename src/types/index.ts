@@ -52,6 +52,10 @@ export interface Exercise {
     created_at: string;
 }
 
+export interface SelectedExercise extends Exercise {
+    target_sets?: number;
+}
+
 // ============================================================================
 // WORKOUT TEMPLATES (Шаблоны тренировок)
 // ============================================================================

@@ -13,7 +13,7 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { ActiveWorkoutScreen } from '@/screens/ActiveWorkoutScreen';
 import { useThemeColors } from '@/hooks';
 
-import { Exercise } from '@/types';
+import { SelectedExercise } from '@/types';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -21,7 +21,7 @@ export type RootStackParamList = {
     ActiveWorkout: {
         workoutId?: string;
         templateId?: string;
-        exercises?: Exercise[];
+        exercises?: SelectedExercise[];
     };
 };
 
@@ -68,4 +68,3 @@ export function RootNavigator() {
         </Stack.Navigator>
     );
 }
-

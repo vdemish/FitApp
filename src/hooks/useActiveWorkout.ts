@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppState } from 'react-native';
-import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, Exercise, ExerciseTrackingType } from '@/types';
+import type { Workout, WorkoutExercise, Set as WorkoutSet, SetStatus, SelectedExercise, ExerciseTrackingType } from '@/types';
 import * as workoutService from '@/services/workoutService';
 import type { SetData } from '@/components/active-workout';
 import {
@@ -188,7 +188,7 @@ function generateTempId(): string {
 export function useActiveWorkout(
     initialWorkoutId?: string,
     templateId?: string,
-    initialExercises?: Exercise[]
+    initialExercises?: SelectedExercise[]
 ): UseActiveWorkoutReturn {
     // State
     const [workout, setWorkout] = useState<Workout | null>(null);

@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './supabase';
-import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate, Exercise } from '@/types';
+import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate, SelectedExercise } from '@/types';
 
 // ============================================================================
 // WORKOUTS
@@ -330,9 +330,14 @@ export async function createWorkoutFromTemplate(templateId: string): Promise<Wor
 /**
  * Создаёт пустую тренировку с выбранными упражнениями
  */
-export async function createWorkoutFromExercises(exercises: Exercise[]): Promise<Workout> {
+export async function createWorkoutFromExercises(exercises: SelectedExercise[]): Promise<Workout> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
+
+    const clampSets = (value: number) => Math.min(19, Math.max(1, value));
+    const targetSetsBySortOrder = new Map(
+        exercises.map((exercise, index) => [index, clampSets(exercise.target_sets ?? 1)])
+    );
 
     // 1. Create Workout
     const { data: workout, error: workoutError } = await supabase
@@ -373,17 +378,24 @@ export async function createWorkoutFromExercises(exercises: Exercise[]): Promise
 
         // Add default sets if exercises created
         if (newExercises && newExercises.length > 0) {
-            const defaultSets = newExercises.map(ex => ({
-                workout_exercise_id: ex.id,
-                set_number: 1,
-                weight: 0,
-                reps: 0,
-                status: 'pending',
-            }));
+            const setsToCreate: any[] = [];
+
+            newExercises.forEach((exercise) => {
+                const setsCount = targetSetsBySortOrder.get(exercise.sort_order) ?? 1;
+                for (let i = 1; i <= setsCount; i++) {
+                    setsToCreate.push({
+                        workout_exercise_id: exercise.id,
+                        set_number: i,
+                        weight: 0,
+                        reps: 0,
+                        status: 'pending',
+                    });
+                }
+            });
 
             const { error: setsError } = await supabase
                 .from('sets')
-                .insert(defaultSets);
+                .insert(setsToCreate);
 
             if (setsError) {
                 console.error('[WorkoutService] Ошибка создания дефолтных подходов:', setsError.message);

@@ -15,7 +15,7 @@ import { colors, typography, spacing, radius } from '@/theme';
 import { StartWorkoutModal } from '@/components';
 import { triggerSelection } from '@/utils/haptics';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
-import type { Exercise } from '@/types';
+import type { SelectedExercise } from '@/types';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -69,7 +69,7 @@ export function HomeScreen() {
     const handleStartWorkoutNavigation = useCallback((params: {
         templateId?: string;
         workoutId?: string;
-        exercises?: Exercise[];
+        exercises?: SelectedExercise[];
     }) => {
         console.log('Navigating to ActiveWorkout...');
         console.log('[HomeScreen] Params:', { ...params, exercises: params.exercises?.length });
