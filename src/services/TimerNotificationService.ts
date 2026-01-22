@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { TIMER_SOUND_LEAD_SECONDS } from '@/constants/timer';
 
 let initialized = false;
 const NOTIFICATIONS_ENABLED =
@@ -60,6 +61,28 @@ interface ScheduleResult extends PermissionResult {
     ids: string[];
 }
 
+function getNotificationContent(label?: string) {
+    if (label === 'Rest') {
+        return {
+            title: 'Rest is finished',
+            body: 'Go back to work!',
+        };
+    }
+
+    if (label?.startsWith('Set ')) {
+        return {
+            title: "It's done!",
+            body: 'Take a rest',
+        };
+    }
+
+    const titleBase = label ? `${label} Timer` : 'Timer';
+    return {
+        title: titleBase,
+        body: 'Timer ending',
+    };
+}
+
 export async function scheduleTimerNotifications({
     startTimeMs,
     durationSeconds,
@@ -77,22 +100,24 @@ export async function scheduleTimerNotifications({
     const ids: string[] = [];
     const now = Date.now();
     const endTimeMs = startTimeMs + durationSeconds * 1000;
-    const titleBase = label ? `${label} Timer` : 'Timer';
     const soundName = Platform.OS === 'ios' ? 'countdown.wav' : 'default';
+    const notificationContent = getNotificationContent(label);
 
     if (endTimeMs > now) {
+        const soundLeadMs = TIMER_SOUND_LEAD_SECONDS * 1000;
+        const triggerTimeMs = Math.max(now + 100, endTimeMs - soundLeadMs);
         const id = await Notifications.scheduleNotificationAsync({
             content: {
-                title: titleBase,
-                body: 'Timer finished',
+                title: notificationContent.title,
+                body: notificationContent.body,
                 sound: soundName,
                 interruptionLevel: 'timeSensitive',
                 ...(Platform.OS === 'android' ? { channelId: 'timer' } : {}),
-                data: { label: titleBase },
+                data: { label: notificationContent.title },
             },
             trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: endTimeMs,
+                date: triggerTimeMs,
             },
         });
         ids.push(id);

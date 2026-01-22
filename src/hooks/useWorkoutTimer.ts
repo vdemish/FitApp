@@ -7,6 +7,7 @@ import {
     scheduleTimerNotifications,
 } from '@/services/TimerNotificationService';
 import { updateRestTimerState } from '@/services/TimerStateStore';
+import { TIMER_SOUND_LEAD_SECONDS } from '@/constants/timer';
 
 interface UseWorkoutTimerProps {
     /** Is the timer running? */
@@ -93,6 +94,16 @@ export function useWorkoutTimer({
         const updateTimer = async () => {
             const now = Date.now();
             const timeLeft = Math.max(0, Math.ceil((endTimestamp - now) / 1000));
+            const shouldPlayLeadSound =
+                !endSoundPlayedRef.current &&
+                AppState.currentState === 'active' &&
+                endTimestamp - now <= TIMER_SOUND_LEAD_SECONDS * 1000 &&
+                endTimestamp - now > 0;
+
+            if (shouldPlayLeadSound) {
+                endSoundPlayedRef.current = true;
+                await playCountdownSound();
+            }
 
             // Only update state if changed (optimization)
             setRemainingTime(prev => {
@@ -104,10 +115,6 @@ export function useWorkoutTimer({
             });
 
             if (timeLeft <= 0) {
-                if (!endSoundPlayedRef.current && AppState.currentState === 'active') {
-                    endSoundPlayedRef.current = true;
-                    await playCountdownSound();
-                }
                 onComplete();
                 cancelNotifications();
             }

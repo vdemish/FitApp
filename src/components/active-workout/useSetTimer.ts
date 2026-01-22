@@ -5,6 +5,7 @@ import {
     cancelTimerNotifications,
     scheduleTimerNotifications,
 } from '@/services/TimerNotificationService';
+import { TIMER_SOUND_LEAD_SECONDS } from '@/constants/timer';
 
 type TimerMode = 'countdown' | 'stopwatch';
 
@@ -133,11 +134,20 @@ export function useSetTimer({
                 notificationIds.current = [];
                 // Ensure we hit exactly 0 remaining
                 setElapsed(effectiveTarget);
-                if (!endSoundPlayedRef.current && AppState.currentState === 'active') {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            if (
+                !endSoundPlayedRef.current &&
+                effectiveTarget > 0 &&
+                AppState.currentState === 'active'
+            ) {
+                const remainingSeconds = effectiveTarget - currentElapsed;
+                if (remainingSeconds <= TIMER_SOUND_LEAD_SECONDS && remainingSeconds > 0) {
                     endSoundPlayedRef.current = true;
                     playCountdownSound();
                 }
-                if (onComplete) onComplete();
             }
         }, 1000);
 

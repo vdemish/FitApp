@@ -1,0 +1,1 @@
+export const TIMER_SOUND_LEAD_SECONDS = 3;
