@@ -13,6 +13,7 @@ import {
     Pressable,
     ActivityIndicator,
     Alert,
+    Modal,
 } from 'react-native';
 import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,12 +22,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ActiveExerciseCard, FocusRestTimer, AddExerciseModal } from '@/components';
-import { Heading } from '@/components/ui';
+import { Button, Heading, Input, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { useActiveWorkout, useThemeColors, ActiveExercise, useWorkoutTimer } from '@/hooks';
 import { triggerTimerTick, triggerSuccess, triggerSelection } from '@/utils/haptics';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
+import type { WorkoutTemplate } from '@/types';
+import { getWorkoutTemplateById, saveNewTemplate, updateTemplateExercises } from '@/services/workoutService';
 
 // Route params type
 type ActiveWorkoutRouteProp = RouteProp<RootStackParamList, 'ActiveWorkout'>;
@@ -37,6 +40,13 @@ export function ActiveWorkoutScreen() {
     const route = useRoute<ActiveWorkoutRouteProp>();
     const themeColors = useThemeColors();
     const [isAddExerciseModalVisible, setAddExerciseModalVisible] = React.useState(false);
+    const [templateInfo, setTemplateInfo] = React.useState<WorkoutTemplate | null>(null);
+    const [isSaveTemplateModalVisible, setIsSaveTemplateModalVisible] = React.useState(false);
+    const [templateName, setTemplateName] = React.useState('');
+    const [templateNameDefault, setTemplateNameDefault] = React.useState('');
+    const [isTemplateNameOptional, setIsTemplateNameOptional] = React.useState(false);
+    const [isSavingTemplate, setIsSavingTemplate] = React.useState(false);
+    const [pendingExitAction, setPendingExitAction] = React.useState<'finish' | 'cancel' | null>(null);
 
     // Get workout ID and template ID from route params
     const workoutId = route.params?.workoutId;
@@ -60,28 +70,166 @@ export function ActiveWorkoutScreen() {
             },
             cancelText: { color: themeColors.textMuted },
             addExerciseButton: { backgroundColor: themeColors.surface },
+            modalOverlay: { backgroundColor: 'rgba(0,0,0,0.5)' },
+            modalContent: { backgroundColor: themeColors.surface },
         }),
         [themeColors]
     );
 
+    useEffect(() => {
+        const fetchTemplateInfo = async () => {
+            if (!workout?.template_id) {
+                setTemplateInfo(null);
+                return;
+            }
+
+            const template = await getWorkoutTemplateById(workout.template_id);
+            setTemplateInfo(template);
+        };
+
+        fetchTemplateInfo();
+    }, [workout?.template_id]);
+
+    const buildTemplateExercises = useCallback(() => {
+        if (!workout?.exercises?.length) return [];
+
+        const sortedExercises = [...workout.exercises].sort((a, b) => a.sort_order - b.sort_order);
+        return sortedExercises.map((exercise, index) => ({
+            exercise_id: exercise.exercise_id,
+            sort_order: Number.isFinite(exercise.sort_order) ? exercise.sort_order : index,
+            target_sets: exercise.sets?.length || 1,
+            rest_seconds: exercise.rest_seconds || 90,
+        }));
+    }, [workout]);
+
+    const hasTemplateChanges = useMemo(() => {
+        if (!templateInfo || !workout?.exercises) return false;
+
+        const templateExercises = [...(templateInfo.exercises || [])].sort(
+            (a, b) => a.sort_order - b.sort_order
+        );
+        const workoutExercises = [...workout.exercises].sort(
+            (a, b) => a.sort_order - b.sort_order
+        );
+
+        if (templateExercises.length !== workoutExercises.length) return true;
+
+        for (let i = 0; i < templateExercises.length; i += 1) {
+            const templateExercise = templateExercises[i];
+            const workoutExercise = workoutExercises[i];
+            const templateSets = templateExercise.target_sets ?? 1;
+            const workoutSets = workoutExercise.sets?.length || 0;
+            const templateRest = templateExercise.rest_seconds ?? 90;
+            const workoutRest = workoutExercise.rest_seconds ?? 90;
+
+            if (templateExercise.exercise_id !== workoutExercise.exercise_id) return true;
+            if (templateExercise.sort_order !== workoutExercise.sort_order) return true;
+            if (templateSets !== workoutSets) return true;
+            if (templateRest !== workoutRest) return true;
+        }
+
+        return false;
+    }, [templateInfo, workout?.exercises]);
+
+    const performExit = useCallback(
+        async (action: 'finish' | 'cancel') => {
+            if (action === 'finish') {
+                await actions.finishWorkout();
+            } else {
+                await actions.cancelWorkout();
+            }
+            navigation.goBack();
+        },
+        [actions, navigation]
+    );
+
+    const saveTemplateAndExit = useCallback(
+        async (action: 'finish' | 'cancel', nameOverride?: string) => {
+            if (!workout) return;
+
+            const exercisesToSave = buildTemplateExercises();
+            const templateNameToUse = nameOverride || templateInfo?.name || 'New Template';
+
+            try {
+                setIsSavingTemplate(true);
+                if (!templateInfo || templateInfo.is_system) {
+                    await saveNewTemplate(templateNameToUse, exercisesToSave);
+                } else {
+                    await updateTemplateExercises(templateInfo.id, exercisesToSave);
+                }
+
+                setIsSaveTemplateModalVisible(false);
+                setTemplateName('');
+                setTemplateNameDefault('');
+                setIsTemplateNameOptional(false);
+                setPendingExitAction(null);
+                await performExit(action);
+            } catch (err) {
+                console.error('[ActiveWorkoutScreen] Failed to save template:', err);
+                Alert.alert('Error', 'Failed to save template');
+            } finally {
+                setIsSavingTemplate(false);
+            }
+        },
+        [workout, templateInfo, buildTemplateExercises, performExit]
+    );
+
+    const handleSavePrompt = useCallback(
+        (action: 'finish' | 'cancel') => {
+            if (templateInfo && !hasTemplateChanges) {
+                performExit(action);
+                return;
+            }
+
+            Alert.alert(
+                'Save Template',
+                templateInfo
+                    ? `Do you want to save changes to template ${templateInfo.name}?`
+                    : 'Do you want to save a template?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'No',
+                        style: 'destructive',
+                        onPress: () => {
+                            performExit(action);
+                        },
+                    },
+                    {
+                        text: 'Yes',
+                        onPress: () => {
+                            if (!templateInfo) {
+                                setPendingExitAction(action);
+                                setTemplateName('');
+                                setTemplateNameDefault('');
+                                setIsTemplateNameOptional(false);
+                                setIsSaveTemplateModalVisible(true);
+                                return;
+                            }
+
+                            if (templateInfo.is_system) {
+                                const defaultName = `My ${templateInfo.name}`;
+                                setPendingExitAction(action);
+                                setTemplateName(defaultName);
+                                setTemplateNameDefault(defaultName);
+                                setIsTemplateNameOptional(true);
+                                setIsSaveTemplateModalVisible(true);
+                                return;
+                            }
+
+                            saveTemplateAndExit(action);
+                        },
+                    },
+                ]
+            );
+        },
+        [templateInfo, hasTemplateChanges, performExit, saveTemplateAndExit]
+    );
+
     // Handle cancel workout
     const handleCancel = useCallback(() => {
-        Alert.alert(
-            'Cancel Workout',
-            'Are you sure you want to cancel this workout? All progress will be lost.',
-            [
-                { text: 'Keep Training', style: 'cancel' },
-                {
-                    text: 'Cancel Workout',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await actions.cancelWorkout();
-                        navigation.goBack();
-                    },
-                },
-            ]
-        );
-    }, [actions, navigation]);
+        handleSavePrompt('cancel');
+    }, [handleSavePrompt]);
 
     // Handle finish workout
     const handleFinish = useCallback(async () => {
@@ -99,11 +247,8 @@ export function ActiveWorkoutScreen() {
             return;
         }
 
-        await actions.finishWorkout();
-        // TODO: Navigate to workout summary modal
-        console.log('[ActiveWorkoutScreen] Workout finished');
-        navigation.goBack();
-    }, [exercises, actions, navigation]);
+        handleSavePrompt('finish');
+    }, [exercises, handleSavePrompt]);
 
     // Calculate active exercise ID (first exercise with incomplete sets)
     const activeExerciseId = useMemo(() => {
@@ -344,6 +489,70 @@ export function ActiveWorkoutScreen() {
                 onClose={() => setAddExerciseModalVisible(false)}
                 onAdd={actions.addExercises}
             />
+
+            <Modal
+                transparent
+                visible={isSaveTemplateModalVisible}
+                animationType="fade"
+                onRequestClose={() => setIsSaveTemplateModalVisible(false)}
+            >
+                <Pressable
+                    style={[styles.modalOverlay, dynamicStyles.modalOverlay]}
+                    onPress={() => setIsSaveTemplateModalVisible(false)}
+                >
+                    <Pressable
+                        style={[styles.modalContent, dynamicStyles.modalContent]}
+                        onPress={(event) => event.stopPropagation()}
+                    >
+                        <Heading level={2} style={styles.modalTitle}>Save Template</Heading>
+                        <UIText variant="body" muted style={styles.modalSubtitle}>
+                            {isTemplateNameOptional ? 'Choose a name for your copy' : 'Name your new template'}
+                        </UIText>
+
+                        <View style={styles.modalInputContainer}>
+                            <Label>Template Name</Label>
+                            <Input
+                                placeholder="e.g., Leg Day Blaster"
+                                value={templateName}
+                                onChangeText={setTemplateName}
+                                autoFocus
+                            />
+                        </View>
+
+                        <View style={styles.modalButtons}>
+                            <Button
+                                variant="ghost"
+                                onPress={() => {
+                                    setIsSaveTemplateModalVisible(false);
+                                    setTemplateNameDefault('');
+                                    setIsTemplateNameOptional(false);
+                                    setPendingExitAction(null);
+                                }}
+                                style={styles.modalButton}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onPress={() => {
+                                    const trimmedName = templateName.trim();
+                                    if (!trimmedName && !isTemplateNameOptional) {
+                                        Alert.alert('Error', 'Please enter a template name');
+                                        return;
+                                    }
+                                    if (!pendingExitAction) return;
+                                    const resolvedName = trimmedName || templateNameDefault;
+                                    saveTemplateAndExit(pendingExitAction, resolvedName);
+                                }}
+                                loading={isSavingTemplate}
+                                style={styles.modalButton}
+                            >
+                                Save
+                            </Button>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -519,5 +728,40 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.md,
+    },
+    modalContent: {
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: radius.xl,
+        padding: spacing.xl,
+        gap: spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
+        elevation: 5,
+    },
+    modalTitle: {
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        textAlign: 'center',
+    },
+    modalInputContainer: {
+        gap: spacing.xs,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        justifyContent: 'flex-end',
+    },
+    modalButton: {
+        flex: 1,
     },
 });

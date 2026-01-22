@@ -129,6 +129,30 @@ export async function getWorkoutTemplates(limit = 10): Promise<WorkoutTemplate[]
 }
 
 /**
+ * Получает шаблон тренировки по ID
+ */
+export async function getWorkoutTemplateById(templateId: string): Promise<WorkoutTemplate | null> {
+    const { data, error } = await supabase
+        .from('workout_templates')
+        .select(`
+            *,
+            exercises:template_exercises(
+                *,
+                exercise:exercises(*)
+            )
+        `)
+        .eq('id', templateId)
+        .single();
+
+    if (error) {
+        console.error('[WorkoutService] Ошибка загрузки шаблона:', error.message);
+        return null;
+    }
+
+    return data;
+}
+
+/**
  * Создаёт новый пользовательский шаблон тренировки
  */
 export async function saveNewTemplate(
@@ -195,6 +219,43 @@ export async function saveNewTemplate(
     }
 
     return fullTemplate;
+}
+
+/**
+ * Обновляет упражнения в существующем пользовательском шаблоне
+ */
+export async function updateTemplateExercises(
+    templateId: string,
+    exercises: { exercise_id: string; sort_order: number; target_sets?: number; rest_seconds?: number }[]
+): Promise<void> {
+    const { error: deleteError } = await supabase
+        .from('template_exercises')
+        .delete()
+        .eq('template_id', templateId);
+
+    if (deleteError) {
+        console.error('[WorkoutService] Ошибка удаления упражнений шаблона:', deleteError.message);
+        throw deleteError;
+    }
+
+    if (!exercises.length) return;
+
+    const templateExercises = exercises.map((ex) => ({
+        template_id: templateId,
+        exercise_id: ex.exercise_id,
+        sort_order: ex.sort_order,
+        target_sets: ex.target_sets || 1,
+        rest_seconds: ex.rest_seconds || 90,
+    }));
+
+    const { error: insertError } = await supabase
+        .from('template_exercises')
+        .insert(templateExercises);
+
+    if (insertError) {
+        console.error('[WorkoutService] Ошибка обновления упражнений шаблона:', insertError.message);
+        throw insertError;
+    }
 }
 
 /**
