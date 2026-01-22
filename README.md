@@ -27,4 +27,7 @@ physical devices before you join the Apple Developer Program.
 - Enable notifications:
   `npm run ios:device:notifications`
 - Disable notifications:
-  `npm run ios:device:no-notifications`
+  `npm run ios:device:no-notifications` (also strips push entitlements after prebuild)
+
+- Simulator with notifications:
+  `npm run ios:sim:notifications`
