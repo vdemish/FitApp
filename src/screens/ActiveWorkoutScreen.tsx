@@ -134,6 +134,13 @@ export function ActiveWorkoutScreen() {
         [actions]
     );
 
+    const handleRemoveSet = useCallback(
+        (setId: string) => {
+            actions.removeSet(setId);
+        },
+        [actions]
+    );
+
     // Timer Logic using the new hook
     const { remainingTime } = useWorkoutTimer({
         isActive: timerState.isActive,
@@ -284,6 +291,7 @@ export function ActiveWorkoutScreen() {
                                         trackingType={item.trackingType}
                                         sets={item.sets}
                                         onAddSet={() => handleAddSet(item.workoutExerciseId)}
+                                        onRemoveSet={handleRemoveSet}
                                         onSetChange={(setId, field, value) =>
                                             handleSetChange(setId, field, value)
                                         }

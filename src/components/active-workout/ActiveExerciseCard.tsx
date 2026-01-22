@@ -179,6 +179,7 @@ export function ActiveExerciseCard({
                         onDistanceChange={(value) => onSetChange?.(set.id, 'distance', value)}
                         onDurationChange={(value) => onSetChange?.(set.id, 'durationSeconds', value)}
                         onToggleComplete={() => onToggleComplete?.(set.id)}
+                        onRemove={onRemoveSet ? () => onRemoveSet(set.id) : undefined}
                         testID={`${testID}-set-${index + 1}`}
                         disabled={isResting}
                     />

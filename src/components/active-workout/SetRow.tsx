@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { NumericInput } from './NumericInput';
 import { TimeInput, formatDuration } from './TimeInput';
 import { Checkbox } from './Checkbox';
@@ -41,6 +42,8 @@ interface SetRowProps {
     onDurationChange?: (value: number) => void;
     /** Callback when completion is toggled */
     onToggleComplete: () => void;
+    /** Callback to remove the set */
+    onRemove?: () => void;
     /** Previous best (e.g., "50kg × 12") */
     previousBest?: string;
     /** Weight unit label */
@@ -68,6 +71,7 @@ export function SetRow({
     onDistanceChange,
     onDurationChange,
     onToggleComplete,
+    onRemove,
     previousBest,
     weightUnit = 'kg',
     distanceUnit = 'km',
@@ -302,7 +306,36 @@ export function SetRow({
         );
     };
 
-    return (
+    const swipeableRef = useRef<Swipeable | null>(null);
+    const swipeEnabled = !!onRemove && !disabled;
+
+    const renderRightActions = (_progress: Animated.AnimatedInterpolation, dragX: Animated.AnimatedInterpolation) => {
+        const scale = dragX.interpolate({
+            inputRange: [-80, -40, 0],
+            outputRange: [1, 0.95, 0.9],
+            extrapolate: 'clamp',
+        });
+
+        return (
+            <View style={styles.deleteActionContainer}>
+                <Animated.View style={{ transform: [{ scale }] }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            onRemove?.();
+                            swipeableRef.current?.close();
+                        }}
+                        style={[styles.deleteAction, { backgroundColor: themeColors.error }]}
+                        disabled={!swipeEnabled}
+                        testID={testID ? `${testID}-delete` : undefined}
+                    >
+                        <Text style={styles.deleteActionText}>Delete</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        );
+    };
+
+    const rowContent = (
         <View
             testID={testID}
             style={[
@@ -352,7 +385,22 @@ export function SetRow({
 
             {/* Completion Action (Checkbox or Timer Button) */}
             {renderAction()}
-        </View >
+        </View>
+    );
+
+    if (!swipeEnabled) {
+        return rowContent;
+    }
+
+    return (
+        <Swipeable
+            ref={swipeableRef}
+            renderRightActions={renderRightActions}
+            rightThreshold={40}
+            overshootRight={false}
+        >
+            {rowContent}
+        </Swipeable>
     );
 }
 
@@ -420,5 +468,20 @@ const styles = StyleSheet.create({
     timerLabelText: {
         fontSize: 10,
         marginTop: 2,
+    },
+    deleteActionContainer: {
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        paddingHorizontal: spacing.sm,
+    },
+    deleteAction: {
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: radius.md,
+    },
+    deleteActionText: {
+        color: '#FFFFFF',
+        fontSize: typography.fontSize.caption,
+        fontWeight: typography.fontWeight.bold,
     },
 });
