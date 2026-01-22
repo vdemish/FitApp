@@ -28,6 +28,13 @@ export async function initTimerNotifications() {
             vibrationPattern: [0, 250, 250, 250],
             lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         });
+        await Notifications.setNotificationChannelAsync('timer-silent', {
+            name: 'Timers (Silent)',
+            importance: Notifications.AndroidImportance.MAX,
+            sound: null,
+            vibrationPattern: [0, 250, 250, 250],
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        });
     }
 
     initialized = true;
@@ -37,6 +44,7 @@ interface ScheduleTimerNotificationsOptions {
     startTimeMs: number;
     durationSeconds: number;
     label?: string;
+    soundEnabled?: boolean;
 }
 
 interface PermissionResult {
@@ -87,6 +95,7 @@ export async function scheduleTimerNotifications({
     startTimeMs,
     durationSeconds,
     label,
+    soundEnabled = true,
 }: ScheduleTimerNotificationsOptions): Promise<ScheduleResult> {
     if (!NOTIFICATIONS_ENABLED) {
         return { ids: [], granted: true, canAskAgain: true };
@@ -101,6 +110,7 @@ export async function scheduleTimerNotifications({
     const now = Date.now();
     const endTimeMs = startTimeMs + durationSeconds * 1000;
     const soundName = Platform.OS === 'ios' ? 'countdown.wav' : 'default';
+    const notificationSound = soundEnabled ? soundName : null;
     const notificationContent = getNotificationContent(label);
 
     if (endTimeMs > now) {
@@ -110,9 +120,11 @@ export async function scheduleTimerNotifications({
             content: {
                 title: notificationContent.title,
                 body: notificationContent.body,
-                sound: soundName,
+                sound: notificationSound,
                 interruptionLevel: 'timeSensitive',
-                ...(Platform.OS === 'android' ? { channelId: 'timer' } : {}),
+                ...(Platform.OS === 'android'
+                    ? { channelId: soundEnabled ? 'timer' : 'timer-silent' }
+                    : {}),
                 data: { label: notificationContent.title },
             },
             trigger: {

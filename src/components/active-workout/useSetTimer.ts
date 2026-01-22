@@ -6,6 +6,7 @@ import {
     scheduleTimerNotifications,
 } from '@/services/TimerNotificationService';
 import { TIMER_SOUND_LEAD_SECONDS } from '@/constants/timer';
+import { useSettings } from '@/context/SettingsContext';
 
 type TimerMode = 'countdown' | 'stopwatch';
 
@@ -40,6 +41,7 @@ export function useSetTimer({
     const notificationIds = useRef<string[]>([]);
     const permissionPromptedRef = useRef(false);
     const endSoundPlayedRef = useRef(false);
+    const { restTimerSounds } = useSettings();
 
     // Calculate remaining for countdown
     const remaining = Math.max(0, targetTime - elapsed);
@@ -97,6 +99,7 @@ export function useSetTimer({
                 startTimeMs: now,
                 durationSeconds: effectiveTarget,
                 label,
+                soundEnabled: restTimerSounds,
             }).then((result) => {
                 notificationIds.current = result.ids;
                 if (!result.granted && !permissionPromptedRef.current) {
@@ -141,7 +144,8 @@ export function useSetTimer({
             if (
                 !endSoundPlayedRef.current &&
                 effectiveTarget > 0 &&
-                AppState.currentState === 'active'
+                AppState.currentState === 'active' &&
+                restTimerSounds
             ) {
                 const remainingSeconds = effectiveTarget - currentElapsed;
                 if (remainingSeconds <= TIMER_SOUND_LEAD_SECONDS && remainingSeconds > 0) {
@@ -151,7 +155,7 @@ export function useSetTimer({
             }
         }, 1000);
 
-    }, [isActive, onComplete, stopTimer, targetTime, label]);
+    }, [isActive, onComplete, stopTimer, targetTime, label, restTimerSounds]);
 
     // Sync state with prop if updated externally (and timer not running)
     useEffect(() => {

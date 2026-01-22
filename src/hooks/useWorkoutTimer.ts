@@ -8,6 +8,7 @@ import {
 } from '@/services/TimerNotificationService';
 import { updateRestTimerState } from '@/services/TimerStateStore';
 import { TIMER_SOUND_LEAD_SECONDS } from '@/constants/timer';
+import { useSettings } from '@/context/SettingsContext';
 
 interface UseWorkoutTimerProps {
     /** Is the timer running? */
@@ -33,6 +34,7 @@ export function useWorkoutTimer({
     const notificationIds = useRef<string[]>([]);
     const permissionPromptedRef = useRef(false);
     const endSoundPlayedRef = useRef(false);
+    const { restTimerSounds } = useSettings();
 
     useEffect(() => {
         prepareCountdownSound();
@@ -52,6 +54,7 @@ export function useWorkoutTimer({
                 startTimeMs: startTimestamp,
                 durationSeconds,
                 label,
+                soundEnabled: restTimerSounds,
             });
             notificationIds.current = result.ids;
             updateRestTimerState({ scheduledNotificationIds: result.ids });
@@ -72,7 +75,7 @@ export function useWorkoutTimer({
                 );
             }
         },
-        [cancelNotifications, label]
+        [cancelNotifications, label, restTimerSounds]
     );
 
     // Timer Logic
@@ -97,6 +100,7 @@ export function useWorkoutTimer({
             const shouldPlayLeadSound =
                 !endSoundPlayedRef.current &&
                 AppState.currentState === 'active' &&
+                restTimerSounds &&
                 endTimestamp - now <= TIMER_SOUND_LEAD_SECONDS * 1000 &&
                 endTimestamp - now > 0;
 
@@ -129,7 +133,15 @@ export function useWorkoutTimer({
             clearInterval(interval);
             cancelNotifications();
         };
-    }, [isActive, duration, startTime, onComplete, scheduleNotifications, cancelNotifications]);
+    }, [
+        isActive,
+        duration,
+        startTime,
+        onComplete,
+        scheduleNotifications,
+        cancelNotifications,
+        restTimerSounds,
+    ]);
 
     // Handle Ticks & Haptics
     const lastTickRef = useRef<number>(-1);

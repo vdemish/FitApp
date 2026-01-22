@@ -17,7 +17,7 @@ import { colors, typography, spacing, radius } from '@/theme';
 export function ProfileScreen() {
     const { user, profile, signOut } = useAuth();
     const { stats, loading, refetch } = useUserStats();
-    const { activeTheme, setTheme } = useSettings();
+    const { activeTheme, setTheme, restTimerSounds, toggleRestTimerSounds } = useSettings();
     const themeColors = useThemeColors();
     const [refreshing, setRefreshing] = useState(false);
 
@@ -212,8 +212,8 @@ export function ProfileScreen() {
                                 <UIText style={styles.settingsLabel}>Rest Timer Sounds</UIText>
                             </View>
                             <Switch
-                                value={true}
-                                onValueChange={() => { }}
+                                value={restTimerSounds}
+                                onValueChange={toggleRestTimerSounds}
                                 trackColor={{
                                     false: themeColors.border,
                                     true: themeColors.primary,
