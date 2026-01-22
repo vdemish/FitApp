@@ -18,3 +18,13 @@ View your app in AI Studio: https://ai.studio/apps/drive/137dWPWHGdDZhxAn4nE4dQM
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Timer Notifications Toggle (iOS device builds)
+
+Notifications can be turned on/off at build time to avoid push entitlements on
+physical devices before you join the Apple Developer Program.
+
+- Enable notifications:
+  `npm run ios:device:notifications`
+- Disable notifications:
+  `npm run ios:device:no-notifications`

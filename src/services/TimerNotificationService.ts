@@ -2,8 +2,11 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 let initialized = false;
+const NOTIFICATIONS_ENABLED =
+    process.env.EXPO_PUBLIC_TIMER_NOTIFICATIONS === 'true';
 
 export async function initTimerNotifications() {
+    if (!NOTIFICATIONS_ENABLED) return;
     if (initialized) return;
 
     Notifications.setNotificationHandler({
@@ -41,6 +44,9 @@ interface PermissionResult {
 }
 
 export async function ensureTimerNotificationPermissions(): Promise<PermissionResult> {
+    if (!NOTIFICATIONS_ENABLED) {
+        return { granted: true, canAskAgain: true };
+    }
     const settings = await Notifications.getPermissionsAsync();
     if (settings.status === 'granted') {
         return { granted: true, canAskAgain: settings.canAskAgain ?? true };
@@ -59,6 +65,9 @@ export async function scheduleTimerNotifications({
     durationSeconds,
     label,
 }: ScheduleTimerNotificationsOptions): Promise<ScheduleResult> {
+    if (!NOTIFICATIONS_ENABLED) {
+        return { ids: [], granted: true, canAskAgain: true };
+    }
     await initTimerNotifications();
     const permission = await ensureTimerNotificationPermissions();
     if (!permission.granted) {
@@ -93,6 +102,7 @@ export async function scheduleTimerNotifications({
 }
 
 export async function cancelTimerNotifications(ids: string[]) {
+    if (!NOTIFICATIONS_ENABLED) return;
     await Promise.all(
         ids.map((id) => Notifications.cancelScheduledNotificationAsync(id))
     );
