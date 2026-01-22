@@ -328,7 +328,9 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                                 <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
                                             </View>
                                             <View style={styles.exerciseInfo}>
-                                                <Heading level={3}>{exercise.name}</Heading>
+                                                <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
+                                                    {exercise.name}
+                                                </Heading>
                                                 <UIText variant="body-sm" muted>{exercise.muscle_group?.name || 'Unknown'}</UIText>
                                             </View>
                                             {selected && (
@@ -545,6 +547,10 @@ const styles = StyleSheet.create({
     },
     exerciseInfo: {
         flex: 1,
+    },
+    exerciseName: {
+        fontSize: 16,
+        lineHeight: 20,
     },
     setsControl: {
         alignItems: 'center',

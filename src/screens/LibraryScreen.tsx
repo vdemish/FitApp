@@ -225,7 +225,9 @@ export function LibraryScreen() {
                     <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
                 </View>
                 <View style={styles.exerciseInfo}>
-                    <Heading level={3}>{exercise.name}</Heading>
+                    <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
+                        {exercise.name}
+                    </Heading>
                     <UIText variant="body-sm" muted>
                         {exercise.muscle_group?.name || 'Unknown'} • {exercise.exercise_type}
                     </UIText>
@@ -633,6 +635,10 @@ const styles = StyleSheet.create({
     },
     exerciseInfo: {
         flex: 1,
+    },
+    exerciseName: {
+        fontSize: 16,
+        lineHeight: 20,
     },
     chevron: {
         fontSize: 24,
