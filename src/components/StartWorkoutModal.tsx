@@ -51,6 +51,26 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         () => new Map(selectedExercises.map(exercise => [exercise.id, exercise])),
         [selectedExercises]
     );
+    const [collapsedSections, setCollapsedSections] = useState({
+        history: false,
+        publicTemplates: false,
+        myTemplates: false,
+        selectExercises: false,
+    });
+
+    const toggleSection = useCallback((key: keyof typeof collapsedSections) => {
+        triggerSelection();
+        setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+    }, []);
+
+    const publicTemplates = useMemo(
+        () => templates.filter(template => template.is_system),
+        [templates]
+    );
+    const myTemplates = useMemo(
+        () => templates.filter(template => !template.is_system),
+        [templates]
+    );
 
     // Refetch data when modal opens
     React.useEffect(() => {
@@ -94,6 +114,9 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         floatingButtonContainer: {
             backgroundColor: themeColors.background,
             borderTopColor: themeColors.border
+        },
+        sectionChevron: {
+            color: themeColors.textMuted,
         },
     }), [themeColors]);
 
@@ -258,194 +281,270 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                     {/* Section A: Your History */}
                     {!historyLoading && historyWorkouts.length > 0 && (
                         <View style={styles.section}>
+                            <Pressable
+                                style={styles.sectionHeader}
+                                onPress={() => toggleSection('history')}
+                            >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.history ? '▸' : '▾'}
+                            </Text>
                             <Label style={styles.sectionLabel}>Your History</Label>
-                            <View style={styles.historyGrid}>
-                                {historyWorkouts.slice(0, 2).map((workout) => (
-                                    <GlassCard
-                                        key={workout.id}
-                                        style={styles.historyCard}
-                                        onPress={() => handleStartFromHistory(workout)}
-                                        onPressIn={() => triggerSelection()}
-                                    >
-                                        <Text style={styles.historyEmoji}>📊</Text>
-                                        <Heading level={3} style={styles.historyTitle}>{workout.name}</Heading>
-                                        <UIText variant="caption" muted>{formatWorkoutDate(workout.completed_at)}</UIText>
-                                        <UIText variant="caption" muted>{workout.exercises?.length || 0} exercises</UIText>
-                                    </GlassCard>
-                                ))}
-                            </View>
+                            </Pressable>
+                            {!collapsedSections.history && (
+                                <View style={styles.historyGrid}>
+                                    {historyWorkouts.slice(0, 2).map((workout) => (
+                                        <GlassCard
+                                            key={workout.id}
+                                            style={styles.historyCard}
+                                            onPress={() => handleStartFromHistory(workout)}
+                                            onPressIn={() => triggerSelection()}
+                                        >
+                                            <Text style={styles.historyEmoji}>📊</Text>
+                                            <Heading level={3} style={styles.historyTitle}>{workout.name}</Heading>
+                                            <UIText variant="caption" muted>{formatWorkoutDate(workout.completed_at)}</UIText>
+                                            <UIText variant="caption" muted>{workout.exercises?.length || 0} exercises</UIText>
+                                        </GlassCard>
+                                    ))}
+                                </View>
+                            )}
                         </View>
                     )}
 
-                    {/* Section B: Start from Template */}
+                    {/* Section B: Public Templates */}
                     <View style={styles.section}>
-                        <Label style={styles.sectionLabel}>Start from Template</Label>
-                        {templatesLoading ? (
-                            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
-                        ) : templates.length > 0 ? (
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.templateScrollContent}
-                            >
-                                {templates.map((template) => (
-                                    <GlassCard
-                                        key={template.id}
-                                        style={styles.templateCard}
-                                        onPress={() => {
-                                            setTemplateIdForDelete(null);
-                                            handleStartFromTemplate(template);
-                                        }}
-                                        onPressIn={() => triggerSelection()}
-                                        onLongPress={() => {
-                                            if (template.is_system) return;
-                                            triggerSelection();
-                                            setTemplateIdForDelete((prev) =>
-                                                prev === template.id ? null : template.id
-                                            );
-                                        }}
-                                    >
-                                        {templateIdForDelete === template.id && !template.is_system && (
-                                            <Pressable
-                                                onPressIn={() => {
-                                                    ignoreClearTemplateRef.current = true;
-                                                }}
-                                                onPress={() => handleDeleteTemplate(template)}
-                                                style={styles.templateDeleteButton}
-                                            >
-                                                <Text style={styles.templateDeleteText}>Delete</Text>
-                                            </Pressable>
-                                        )}
-                                        <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                        <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
-                                            {template.name}
-                                        </UIText>
-                                    </GlassCard>
-                                ))}
-                            </ScrollView>
-                        ) : (
-                            <GlassCard style={styles.emptyCard}>
-                                <UIText variant="body-sm" muted>No templates available</UIText>
-                            </GlassCard>
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('publicTemplates')}
+                        >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.publicTemplates ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>Public Templates</Label>
+                        </Pressable>
+                        {!collapsedSections.publicTemplates && (
+                            templatesLoading ? (
+                                <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+                            ) : publicTemplates.length > 0 ? (
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.templateScrollContent}
+                                >
+                                    {publicTemplates.map((template) => (
+                                        <GlassCard
+                                            key={template.id}
+                                            style={styles.templateCard}
+                                            onPress={() => {
+                                                setTemplateIdForDelete(null);
+                                                handleStartFromTemplate(template);
+                                            }}
+                                            onPressIn={() => triggerSelection()}
+                                        >
+                                            <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
+                                            <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
+                                                {template.name}
+                                            </UIText>
+                                        </GlassCard>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <GlassCard style={styles.emptyCard}>
+                                    <UIText variant="body-sm" muted>No public templates</UIText>
+                                </GlassCard>
+                            )
                         )}
                     </View>
 
-                    {/* Section C: Start Empty Workout (Exercise Selection) */}
+                    {/* Section C: My Templates */}
                     <View style={styles.section}>
-                        <Label style={styles.sectionLabel}>
-                            {`Select Exercises${selectedExercises.length > 0 ? ` (${selectedExercises.length})` : ''}`}
-                        </Label>
-
-                        {/* Search */}
-                        <View style={styles.searchContainer}>
-                            <Input
-                                icon="search"
-                                placeholder="Search exercises..."
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
-                        </View>
-
-                        {/* Category Pills */}
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.categoryContainer}
-                            contentContainerStyle={styles.categoryContent}
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('myTemplates')}
                         >
-                            <CategoryPill
-                                label="All"
-                                active={selectedMuscleGroupId === null}
-                                onPress={() => { triggerSelection(); setSelectedMuscleGroupId(null); }}
-                            />
-                            {muscleGroups.map(group => (
-                                <CategoryPill
-                                    key={group.id}
-                                    label={group.name}
-                                    active={selectedMuscleGroupId === group.id}
-                                    onPress={() => { triggerSelection(); setSelectedMuscleGroupId(group.id); }}
-                                />
-                            ))}
-                        </ScrollView>
-
-                        {/* Exercise List */}
-                        {exercisesLoading ? (
-                            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
-                        ) : (
-                            <View style={styles.exerciseList}>
-                                {filteredExercises.map((exercise) => {
-                                    const selectedExercise = selectedExercisesById.get(exercise.id);
-                                    const selected = !!selectedExercise;
-                                    const setCount = selectedExercise?.target_sets ?? MIN_SETS;
-                                    return (
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.myTemplates ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>My Templates</Label>
+                        </Pressable>
+                        {!collapsedSections.myTemplates && (
+                            templatesLoading ? (
+                                <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+                            ) : myTemplates.length > 0 ? (
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.templateScrollContent}
+                                >
+                                    {myTemplates.map((template) => (
                                         <GlassCard
-                                            key={exercise.id}
-                                            style={{
-                                                ...styles.exerciseCard,
-                                                ...(selected ? styles.exerciseCardSelected : {}),
+                                            key={template.id}
+                                            style={styles.templateCard}
+                                            onPress={() => {
+                                                setTemplateIdForDelete(null);
+                                                handleStartFromTemplate(template);
                                             }}
-                                            onPress={() => toggleExerciseSelection(exercise)}
                                             onPressIn={() => triggerSelection()}
+                                            onLongPress={() => {
+                                                triggerSelection();
+                                                setTemplateIdForDelete((prev) =>
+                                                    prev === template.id ? null : template.id
+                                                );
+                                            }}
                                         >
-                                            <View style={[
-                                                styles.exerciseIcon,
-                                                dynamicStyles.exerciseIcon,
-                                                selected && styles.exerciseIconSelected,
-                                            ]}>
-                                                <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
-                                            </View>
-                                            <View style={styles.exerciseInfo}>
-                                                <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
-                                                    {exercise.name}
-                                                </Heading>
-                                                <UIText variant="body-sm" muted>{exercise.muscle_group?.name || 'Unknown'}</UIText>
-                                            </View>
-                                            {selected && (
-                                                <View style={styles.setsControl}>
-                                                    <UIText variant="caption" style={[styles.setsLabel, dynamicStyles.setLabelText]}>
-                                                        Sets
-                                                    </UIText>
-                                                    <View style={styles.setsStepper}>
-                                                        <Pressable
-                                                            onPress={(event) => {
-                                                                event.stopPropagation();
-                                                                triggerSelection();
-                                                                updateExerciseSets(exercise.id, -1);
-                                                            }}
-                                                            disabled={setCount <= MIN_SETS}
-                                                            style={[
-                                                                styles.setButton,
-                                                                dynamicStyles.setButton,
-                                                                setCount <= MIN_SETS && styles.setButtonDisabled,
-                                                            ]}
-                                                        >
-                                                            <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>-</Text>
-                                                        </Pressable>
-                                                        <Text style={[styles.setCountText, dynamicStyles.setCountText]}>
-                                                            {setCount}
-                                                        </Text>
-                                                        <Pressable
-                                                            onPress={(event) => {
-                                                                event.stopPropagation();
-                                                                triggerSelection();
-                                                                updateExerciseSets(exercise.id, 1);
-                                                            }}
-                                                            disabled={setCount >= MAX_SETS}
-                                                            style={[
-                                                                styles.setButton,
-                                                                dynamicStyles.setButton,
-                                                                setCount >= MAX_SETS && styles.setButtonDisabled,
-                                                            ]}
-                                                        >
-                                                            <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>+</Text>
-                                                        </Pressable>
-                                                    </View>
-                                                </View>
+                                            {templateIdForDelete === template.id && (
+                                                <Pressable
+                                                    onPressIn={() => {
+                                                        ignoreClearTemplateRef.current = true;
+                                                    }}
+                                                    onPress={() => handleDeleteTemplate(template)}
+                                                    style={styles.templateDeleteButton}
+                                                >
+                                                    <Text style={styles.templateDeleteText}>Delete</Text>
+                                                </Pressable>
                                             )}
+                                            <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
+                                            <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
+                                                {template.name}
+                                            </UIText>
                                         </GlassCard>
-                                    );
-                                })}
-                            </View>
+                                    ))}
+                                </ScrollView>
+                            ) : (
+                                <GlassCard style={styles.emptyCard}>
+                                    <UIText variant="body-sm" muted>No templates yet</UIText>
+                                </GlassCard>
+                            )
+                        )}
+                    </View>
+
+                    {/* Section D: Start Empty Workout (Exercise Selection) */}
+                    <View style={styles.section}>
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('selectExercises')}
+                        >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.selectExercises ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>
+                                {`Select Exercises${selectedExercises.length > 0 ? ` (${selectedExercises.length})` : ''}`}
+                            </Label>
+                        </Pressable>
+
+                        {!collapsedSections.selectExercises && (
+                            <>
+                                {/* Search */}
+                                <View style={styles.searchContainer}>
+                                    <Input
+                                        icon="search"
+                                        placeholder="Search exercises..."
+                                        value={searchQuery}
+                                        onChangeText={setSearchQuery}
+                                    />
+                                </View>
+
+                                {/* Category Pills */}
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.categoryContainer}
+                                    contentContainerStyle={styles.categoryContent}
+                                >
+                                    <CategoryPill
+                                        label="All"
+                                        active={selectedMuscleGroupId === null}
+                                        onPress={() => { triggerSelection(); setSelectedMuscleGroupId(null); }}
+                                    />
+                                    {muscleGroups.map(group => (
+                                        <CategoryPill
+                                            key={group.id}
+                                            label={group.name}
+                                            active={selectedMuscleGroupId === group.id}
+                                            onPress={() => { triggerSelection(); setSelectedMuscleGroupId(group.id); }}
+                                        />
+                                    ))}
+                                </ScrollView>
+
+                                {/* Exercise List */}
+                                {exercisesLoading ? (
+                                    <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+                                ) : (
+                                    <View style={styles.exerciseList}>
+                                        {filteredExercises.map((exercise) => {
+                                            const selectedExercise = selectedExercisesById.get(exercise.id);
+                                            const selected = !!selectedExercise;
+                                            const setCount = selectedExercise?.target_sets ?? MIN_SETS;
+                                            return (
+                                                <GlassCard
+                                                    key={exercise.id}
+                                                    style={{
+                                                        ...styles.exerciseCard,
+                                                        ...(selected ? styles.exerciseCardSelected : {}),
+                                                    }}
+                                                    onPress={() => toggleExerciseSelection(exercise)}
+                                                    onPressIn={() => triggerSelection()}
+                                                >
+                                                    <View style={[
+                                                        styles.exerciseIcon,
+                                                        dynamicStyles.exerciseIcon,
+                                                        selected && styles.exerciseIconSelected,
+                                                    ]}>
+                                                        <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
+                                                    </View>
+                                                    <View style={styles.exerciseInfo}>
+                                                        <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
+                                                            {exercise.name}
+                                                        </Heading>
+                                                        <UIText variant="body-sm" muted>{exercise.muscle_group?.name || 'Unknown'}</UIText>
+                                                    </View>
+                                                    {selected && (
+                                                        <View style={styles.setsControl}>
+                                                            <UIText variant="caption" style={[styles.setsLabel, dynamicStyles.setLabelText]}>
+                                                                Sets
+                                                            </UIText>
+                                                            <View style={styles.setsStepper}>
+                                                                <Pressable
+                                                                    onPress={(event) => {
+                                                                        event.stopPropagation();
+                                                                        triggerSelection();
+                                                                        updateExerciseSets(exercise.id, -1);
+                                                                    }}
+                                                                    disabled={setCount <= MIN_SETS}
+                                                                    style={[
+                                                                        styles.setButton,
+                                                                        dynamicStyles.setButton,
+                                                                        setCount <= MIN_SETS && styles.setButtonDisabled,
+                                                                    ]}
+                                                                >
+                                                                    <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>-</Text>
+                                                                </Pressable>
+                                                                <Text style={[styles.setCountText, dynamicStyles.setCountText]}>
+                                                                    {setCount}
+                                                                </Text>
+                                                                <Pressable
+                                                                    onPress={(event) => {
+                                                                        event.stopPropagation();
+                                                                        triggerSelection();
+                                                                        updateExerciseSets(exercise.id, 1);
+                                                                    }}
+                                                                    disabled={setCount >= MAX_SETS}
+                                                                    style={[
+                                                                        styles.setButton,
+                                                                        dynamicStyles.setButton,
+                                                                        setCount >= MAX_SETS && styles.setButtonDisabled,
+                                                                    ]}
+                                                                >
+                                                                    <Text style={[styles.setButtonText, dynamicStyles.setButtonText]}>+</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        </View>
+                                                    )}
+                                                </GlassCard>
+                                            );
+                                        })}
+                                    </View>
+                                )}
+                            </>
                         )}
                     </View>
 
@@ -521,8 +620,17 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: spacing.xl,
     },
-    sectionLabel: {
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
         marginBottom: spacing.md,
+    },
+    sectionLabel: {
+        flex: 1,
+    },
+    sectionChevron: {
+        fontSize: 20,
     },
 
     // History Grid (2 columns)
@@ -550,11 +658,11 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     templateCard: {
-        width: 140, // Fixed width for horizontal items
+        width: 105, // Fixed width for horizontal items
         padding: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 110,
+        minHeight: 83,
     },
     templateDeleteButton: {
         position: 'absolute',
@@ -571,12 +679,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     templateEmoji: {
-        fontSize: 28,
+        fontSize: 27,
         marginBottom: spacing.sm,
     },
     templateName: {
         textAlign: 'center',
-        fontSize: 12,
+        fontSize: 15,
     },
     emptyCard: {
         padding: spacing.lg,

@@ -48,6 +48,17 @@ export function LibraryScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [templateIdForDelete, setTemplateIdForDelete] = useState<string | null>(null);
     const ignoreClearTemplateRef = useRef(false);
+    const [collapsedSections, setCollapsedSections] = useState({
+        publicTemplates: false,
+        myTemplates: false,
+        commonlyUsed: false,
+        allExercises: false,
+    });
+
+    const toggleSection = useCallback((key: keyof typeof collapsedSections) => {
+        triggerSelection();
+        setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+    }, []);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -88,12 +99,17 @@ export function LibraryScreen() {
         setLabelText: {
             color: themeColors.textMuted,
         },
+        sectionChevron: {
+            color: themeColors.textMuted,
+        },
     }), [themeColors]);
 
-    // My Templates (User created only)
-    // Assuming useWorkoutTemplates returns both system and user, we filter for local display if needed.
-    // However, the service `getWorkoutTemplates` returns everything. 
-    // Let's rely on the `is_system` flag to distinguish "My Templates".
+    // Public + My Templates
+    // Assuming useWorkoutTemplates returns both system and user; use `is_system` to separate.
+    const publicTemplates = useMemo(() => {
+        return templates.filter(t => t.is_system);
+    }, [templates]);
+
     const myTemplates = useMemo(() => {
         return templates.filter(t => !t.is_system);
     }, [templates]);
@@ -426,66 +442,131 @@ export function LibraryScreen() {
                     ))}
                 </ScrollView>
 
+                {/* Public Templates Section (Only in normal mode and if exists) */}
+                {!isSelectionMode && publicTemplates.length > 0 && (
+                    <View style={styles.section}>
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('publicTemplates')}
+                        >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.publicTemplates ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>Public Templates</Label>
+                        </Pressable>
+                        {!collapsedSections.publicTemplates && (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templatesList}>
+                                {publicTemplates.map(template => (
+                                    <GlassCard
+                                        key={template.id}
+                                        style={styles.templateCard}
+                                        onPress={() => {
+                                            triggerSelection();
+                                            setTemplateIdForDelete(null);
+                                            navigation.navigate('ActiveWorkout', { templateId: template.id });
+                                        }}
+                                    >
+                                        <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
+                                        <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
+                                            {template.name}
+                                        </UIText>
+                                    </GlassCard>
+                                ))}
+                            </ScrollView>
+                        )}
+                    </View>
+                )}
+
                 {/* My Templates Section (Only in normal mode and if exists) */}
                 {!isSelectionMode && myTemplates.length > 0 && (
                     <View style={styles.section}>
-                        <Label style={styles.sectionLabel}>My Templates</Label>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templatesList}>
-                            {myTemplates.map(template => (
-                                <GlassCard
-                                    key={template.id}
-                                    style={styles.templateCard}
-                                    onPress={() => {
-                                        triggerSelection();
-                                        setTemplateIdForDelete(null);
-                                        navigation.navigate('ActiveWorkout', { templateId: template.id });
-                                    }}
-                                    onLongPress={() => {
-                                        triggerSelection();
-                                        setTemplateIdForDelete((prev) =>
-                                            prev === template.id ? null : template.id
-                                        );
-                                    }}
-                                >
-                                    {templateIdForDelete === template.id && (
-                                        <Pressable
-                                            onPressIn={() => {
-                                                ignoreClearTemplateRef.current = true;
-                                            }}
-                                            onPress={() => handleDeleteTemplate(template)}
-                                            style={styles.templateDeleteButton}
-                                        >
-                                            <Text style={styles.templateDeleteText}>Delete</Text>
-                                        </Pressable>
-                                    )}
-                                    <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                    <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
-                                        {template.name}
-                                    </UIText>
-                                </GlassCard>
-                            ))}
-                        </ScrollView>
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('myTemplates')}
+                        >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.myTemplates ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>My Templates</Label>
+                        </Pressable>
+                        {!collapsedSections.myTemplates && (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templatesList}>
+                                {myTemplates.map(template => (
+                                    <GlassCard
+                                        key={template.id}
+                                        style={styles.templateCard}
+                                        onPress={() => {
+                                            triggerSelection();
+                                            setTemplateIdForDelete(null);
+                                            navigation.navigate('ActiveWorkout', { templateId: template.id });
+                                        }}
+                                        onLongPress={() => {
+                                            triggerSelection();
+                                            setTemplateIdForDelete((prev) =>
+                                                prev === template.id ? null : template.id
+                                            );
+                                        }}
+                                    >
+                                        {templateIdForDelete === template.id && (
+                                            <Pressable
+                                                onPressIn={() => {
+                                                    ignoreClearTemplateRef.current = true;
+                                                }}
+                                                onPress={() => handleDeleteTemplate(template)}
+                                                style={styles.templateDeleteButton}
+                                            >
+                                                <Text style={styles.templateDeleteText}>Delete</Text>
+                                            </Pressable>
+                                        )}
+                                        <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
+                                        <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
+                                            {template.name}
+                                        </UIText>
+                                    </GlassCard>
+                                ))}
+                            </ScrollView>
+                        )}
                     </View>
                 )}
 
                 {/* Commonly Used Section (Hide in selection mode to avoid duplicates confusion or simplify) */}
                 {!isSelectionMode && commonlyUsed.length > 0 && (
                     <View style={styles.section}>
-                        <Label style={styles.sectionLabel}>Commonly Used</Label>
-                        <View style={styles.exerciseList}>
-                            {commonlyUsed.map(ex => renderExerciseCard(ex, true))}
-                        </View>
+                        <Pressable
+                            style={styles.sectionHeader}
+                            onPress={() => toggleSection('commonlyUsed')}
+                        >
+                            <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                                {collapsedSections.commonlyUsed ? '▸' : '▾'}
+                            </Text>
+                            <Label style={styles.sectionLabel}>Commonly Used</Label>
+                        </Pressable>
+                        {!collapsedSections.commonlyUsed && (
+                            <View style={styles.exerciseList}>
+                                {commonlyUsed.map(ex => renderExerciseCard(ex, true))}
+                            </View>
+                        )}
                     </View>
                 )}
 
                 {/* A-Z Section */}
                 <View style={styles.section}>
-                    <Label style={styles.sectionLabel}>
-                        {isSelectionMode ? `All Exercises` : `A-Z (${filteredExercises.length})`}
-                    </Label>
-                    <View style={styles.exerciseList}>
-                        {filteredExercises.map(ex => renderExerciseCard(ex, false))}
-                    </View>
+                    <Pressable
+                        style={styles.sectionHeader}
+                        onPress={() => toggleSection('allExercises')}
+                    >
+                        <Text style={[styles.sectionChevron, dynamicStyles.sectionChevron]}>
+                            {collapsedSections.allExercises ? '▸' : '▾'}
+                        </Text>
+                        <Label style={styles.sectionLabel}>
+                            {isSelectionMode ? `All Exercises` : `A-Z (${filteredExercises.length})`}
+                        </Label>
+                    </Pressable>
+                    {!collapsedSections.allExercises && (
+                        <View style={styles.exerciseList}>
+                            {filteredExercises.map(ex => renderExerciseCard(ex, false))}
+                        </View>
+                    )}
                 </View>
 
                 {/* Bottom Padding for Floating Bar */}
@@ -594,6 +675,8 @@ const styles = StyleSheet.create({
     addButton: {
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         borderColor: `${colors.primary.DEFAULT}33`,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     cancelButton: {
         minWidth: 80,
@@ -601,6 +684,10 @@ const styles = StyleSheet.create({
     addIcon: {
         fontSize: 24,
         color: colors.primary.DEFAULT,
+        fontWeight: '800',
+        lineHeight: 24,
+        textAlign: 'center',
+        includeFontPadding: false,
     },
 
     // Search
@@ -623,9 +710,18 @@ const styles = StyleSheet.create({
     section: {
         marginTop: spacing.lg,
     },
-    sectionLabel: {
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
         marginBottom: spacing.md,
+    },
+    sectionLabel: {
         marginLeft: spacing.xs,
+        flex: 1,
+    },
+    sectionChevron: {
+        fontSize: 20,
     },
     exerciseList: {
         gap: spacing.md,
@@ -637,8 +733,8 @@ const styles = StyleSheet.create({
 
     // Template Card
     templateCard: {
-        width: 140,
-        height: 120,
+        width: 105,
+        height: 90,
         padding: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -659,11 +755,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     templateEmoji: {
-        fontSize: 32,
+        fontSize: 27,
     },
     templateName: {
         textAlign: 'center',
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
     },
 
