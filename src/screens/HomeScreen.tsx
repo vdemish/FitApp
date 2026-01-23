@@ -143,18 +143,17 @@ export function HomeScreen() {
                             {stats?.totalWorkouts ?? 0} workouts
                         </UIText>
                     </View>
-                    <GlassCard
-                        style={styles.streakCard}
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        style={styles.streakButton}
                         onPress={() => navigation.navigate('History')}
                     >
                         <Text style={styles.streakEmoji}>🔥</Text>
-                        <View style={styles.streakText}>
-                            <UIText variant="caption" style={styles.streakValue}>
-                                {stats?.weekStreak ?? 0} weeks
-                            </UIText>
-                            <UIText variant="caption" muted>in a row</UIText>
-                        </View>
-                    </GlassCard>
+                        <UIText variant="body-sm" muted style={styles.streakValue}>
+                            {stats?.weekStreak ?? 0} {((stats?.weekStreak ?? 0) === 1) ? 'week' : 'weeks'}
+                        </UIText>
+                    </Button>
                 </View>
 
                 {/* AI Summary Card */}
@@ -277,21 +276,18 @@ const styles = StyleSheet.create({
     workoutCount: {
         marginTop: spacing.xs,
     },
-    streakCard: {
+    streakButton: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.sm,
-        paddingVertical: 6,
-        height: 40,
+        paddingRight: spacing.sm + 5,
+        paddingVertical: 0,
+        height: 48,
         gap: spacing.xs,
-        minWidth: 130,
         marginLeft: spacing.md,
     },
     streakEmoji: {
         fontSize: 18,
-    },
-    streakText: {
-        alignItems: 'flex-start',
     },
     streakValue: {
         fontWeight: typography.fontWeight.bold,

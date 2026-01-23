@@ -150,9 +150,9 @@ export function ProfileScreen() {
                                 <View style={[styles.statDivider, dynamicStyles.statDivider]} />
                                 <View style={styles.statItem}>
                                     <UIText variant="display" style={styles.statValue}>
-                                        {stats?.weekStreak || 0}
+                                        {stats?.weekStreak ?? 0}
                                     </UIText>
-                                    <Label>Week Streak</Label>
+                                    <Label>{(stats?.weekStreak ?? 0) === 1 ? 'Week' : 'Weeks'} Streak</Label>
                                 </View>
                             </>
                         )}

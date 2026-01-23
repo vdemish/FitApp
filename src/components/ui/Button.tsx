@@ -45,15 +45,15 @@ interface ButtonProps {
 // Размеры кнопок
 const sizeStyles: Record<ButtonSize, { height: number; paddingHorizontal: number; fontSize: number; borderRadius: number }> = {
     sm: { height: 40, paddingHorizontal: 16, fontSize: 12, borderRadius: radius.lg },
-    md: { height: 48, paddingHorizontal: 24, fontSize: 14, borderRadius: radius.xl },
-    lg: { height: 56, paddingHorizontal: 32, fontSize: 16, borderRadius: radius.xl },
+    md: { height: 48, paddingHorizontal: 24, fontSize: 14, borderRadius: radius.card },
+    lg: { height: 56, paddingHorizontal: 32, fontSize: 16, borderRadius: radius.card },
 };
 
 // Размеры для icon варианта
 const iconSizeStyles: Record<ButtonSize, { size: number; borderRadius: number }> = {
     sm: { size: 40, borderRadius: radius.lg },
-    md: { size: 48, borderRadius: radius.xl },
-    lg: { size: 56, borderRadius: radius.xl },
+    md: { size: 48, borderRadius: radius.card },
+    lg: { size: 56, borderRadius: radius.card },
 };
 
 export function Button({

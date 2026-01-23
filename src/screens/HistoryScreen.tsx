@@ -129,11 +129,9 @@ export function HistoryScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <View>
+                    <View style={styles.headerTitle}>
                         <Heading level={1}>History</Heading>
-                        <UIText variant="body-sm" accent uppercase style={styles.subtitle}>
-                            Analytics Dashboard
-                        </UIText>
+                        
                     </View>
                     <Button variant="secondary" size="md" testID="calendar-button">
                         <Text style={styles.calendarIcon}>📅</Text>
@@ -299,7 +297,10 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+    },
+    headerTitle: {
+        flex: 1,
     },
     subtitle: {
         marginTop: 4,
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
         backgroundColor: `${colors.success}1A`,
         paddingHorizontal: spacing.sm,
         paddingVertical: 2,
-        borderRadius: radius.full,
+        borderRadius: radius.card,
     },
     percentText: {
         fontSize: typography.fontSize.caption,
@@ -343,7 +344,7 @@ const styles = StyleSheet.create({
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         paddingHorizontal: spacing.sm,
         paddingVertical: 4,
-        borderRadius: radius.full,
+        borderRadius: radius.card,
         borderWidth: 1,
         borderColor: `${colors.primary.DEFAULT}33`,
     },

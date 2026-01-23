@@ -18,6 +18,9 @@ export const typography = {
         semibold: '600' as const,
         bold: '700' as const,
     },
+    letterSpacing: {
+        caption: 0,
+    },
     lineHeight: {
         tight: 1.1,
         normal: 1.5,

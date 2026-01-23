@@ -123,7 +123,7 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: radius.xl,
+        borderRadius: radius.card,
         borderWidth: 1,
     },
     glowDark: {

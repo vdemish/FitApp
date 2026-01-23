@@ -71,7 +71,11 @@ const textVariantStyles: Record<TextVariant, TextStyle> = {
     display: { fontSize: typography.fontSize.display, fontWeight: typography.fontWeight.bold },
     body: { fontSize: typography.fontSize.body },
     'body-sm': { fontSize: typography.fontSize.bodySm },
-    caption: { fontSize: typography.fontSize.caption, fontWeight: typography.fontWeight.bold, letterSpacing: 2 },
+    caption: {
+        fontSize: typography.fontSize.caption,
+        fontWeight: typography.fontWeight.bold,
+        letterSpacing: typography.letterSpacing.caption,
+    },
 };
 
 export function Text({
@@ -140,6 +144,6 @@ const styles = StyleSheet.create({
         fontWeight: typography.fontWeight.bold,
         // color is set dynamically via themeColors.textMuted
         textTransform: 'uppercase',
-        letterSpacing: 2,
+        letterSpacing: typography.letterSpacing.caption,
     },
 });

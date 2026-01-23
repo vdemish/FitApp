@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 24,
         paddingVertical: 10,
-        borderRadius: radius.full,
+        borderRadius: radius.card,
     },
     active: {
         backgroundColor: colors.primary.DEFAULT,
