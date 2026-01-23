@@ -59,6 +59,14 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         }
     }, [visible, refetchTemplates]);
 
+    React.useEffect(() => {
+        if (!visible) {
+            setSelectedExercises([]);
+            setSearchQuery('');
+            setSelectedMuscleGroupId(null);
+        }
+    }, [visible]);
+
     // Dynamic styles
     const dynamicStyles = useMemo(() => ({
         container: { backgroundColor: themeColors.background },

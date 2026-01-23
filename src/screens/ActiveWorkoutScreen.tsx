@@ -30,6 +30,8 @@ import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
 import type { WorkoutTemplate } from '@/types';
 import { getWorkoutTemplateById, saveNewTemplate, updateTemplateExercises } from '@/services/workoutService';
+import { saveExercisePrefills, saveTemplatePrefill } from '@/services/workoutPrefillService';
+import { useAuth } from '@/context/AuthContext';
 
 // Route params type
 type ActiveWorkoutRouteProp = RouteProp<RootStackParamList, 'ActiveWorkout'>;
@@ -39,6 +41,7 @@ export function ActiveWorkoutScreen() {
     const navigation = useNavigation<ActiveWorkoutNavigationProp>();
     const route = useRoute<ActiveWorkoutRouteProp>();
     const themeColors = useThemeColors();
+    const { user } = useAuth();
     const [isAddExerciseModalVisible, setAddExerciseModalVisible] = React.useState(false);
     const [templateInfo, setTemplateInfo] = React.useState<WorkoutTemplate | null>(null);
     const [isSaveTemplateModalVisible, setIsSaveTemplateModalVisible] = React.useState(false);
@@ -102,6 +105,54 @@ export function ActiveWorkoutScreen() {
         }));
     }, [workout]);
 
+    const buildExercisePrefills = useCallback(() => {
+        if (!workout?.exercises?.length) return [];
+
+        return workout.exercises.map((exercise) => ({
+            exerciseId: exercise.exercise_id,
+            sets: (exercise.sets || [])
+                .slice()
+                .sort((a, b) => a.set_number - b.set_number)
+                .map((set) => ({
+                    weight: set.weight ?? 0,
+                    reps: set.reps ?? 0,
+                    distance: set.distance ?? 0,
+                    durationSeconds: set.duration_seconds ?? 0,
+                })),
+        }));
+    }, [workout]);
+
+    const buildTemplatePrefillItems = useCallback(() => {
+        if (!workout?.exercises?.length) return [];
+
+        return workout.exercises.map((exercise) => ({
+            exerciseId: exercise.exercise_id,
+            sortOrder: Number.isFinite(exercise.sort_order) ? exercise.sort_order : 0,
+            sets: (exercise.sets || [])
+                .slice()
+                .sort((a, b) => a.set_number - b.set_number)
+                .map((set) => ({
+                    weight: set.weight ?? 0,
+                    reps: set.reps ?? 0,
+                    distance: set.distance ?? 0,
+                    durationSeconds: set.duration_seconds ?? 0,
+                })),
+        }));
+    }, [workout]);
+
+    const persistExercisePrefills = useCallback(async () => {
+        if (!user?.id) return;
+        const entries = buildExercisePrefills();
+        if (!entries.length) return;
+        await saveExercisePrefills(user.id, entries);
+    }, [user?.id, buildExercisePrefills]);
+
+    const persistTemplatePrefill = useCallback(async (templateId: string) => {
+        if (!user?.id) return;
+        const items = buildTemplatePrefillItems();
+        await saveTemplatePrefill(user.id, templateId, items);
+    }, [user?.id, buildTemplatePrefillItems]);
+
     const hasTemplateChanges = useMemo(() => {
         if (!templateInfo || !workout?.exercises) return false;
 
@@ -143,6 +194,18 @@ export function ActiveWorkoutScreen() {
         [actions, navigation]
     );
 
+    const performFinishExit = useCallback(
+        async (templateIdForPrefill?: string) => {
+            await persistExercisePrefills();
+            if (templateIdForPrefill) {
+                await persistTemplatePrefill(templateIdForPrefill);
+            }
+            await actions.finishWorkout();
+            navigation.goBack();
+        },
+        [actions, navigation, persistExercisePrefills, persistTemplatePrefill]
+    );
+
     const saveTemplateAndExit = useCallback(
         async (action: 'finish' | 'cancel', nameOverride?: string) => {
             if (!workout) return;
@@ -152,8 +215,10 @@ export function ActiveWorkoutScreen() {
 
             try {
                 setIsSavingTemplate(true);
+                let savedTemplateId = templateInfo?.id || null;
                 if (!templateInfo || templateInfo.is_system) {
-                    await saveNewTemplate(templateNameToUse, exercisesToSave);
+                    const createdTemplate = await saveNewTemplate(templateNameToUse, exercisesToSave);
+                    savedTemplateId = createdTemplate.id;
                 } else {
                     await updateTemplateExercises(templateInfo.id, exercisesToSave);
                 }
@@ -163,7 +228,11 @@ export function ActiveWorkoutScreen() {
                 setTemplateNameDefault('');
                 setIsTemplateNameOptional(false);
                 setPendingExitAction(null);
-                await performExit(action);
+                if (action === 'finish') {
+                    await performFinishExit(savedTemplateId || undefined);
+                } else {
+                    await performExit(action);
+                }
             } catch (err) {
                 console.error('[ActiveWorkoutScreen] Failed to save template:', err);
                 Alert.alert('Error', 'Failed to save template');
@@ -171,13 +240,17 @@ export function ActiveWorkoutScreen() {
                 setIsSavingTemplate(false);
             }
         },
-        [workout, templateInfo, buildTemplateExercises, performExit]
+        [workout, templateInfo, buildTemplateExercises, performExit, performFinishExit]
     );
 
     const handleSavePrompt = useCallback(
         (action: 'finish' | 'cancel') => {
             if (templateInfo && !hasTemplateChanges) {
-                performExit(action);
+                if (action === 'finish') {
+                    performFinishExit(templateInfo.id);
+                } else {
+                    performExit(action);
+                }
                 return;
             }
 
@@ -192,7 +265,11 @@ export function ActiveWorkoutScreen() {
                         text: 'No',
                         style: 'destructive',
                         onPress: () => {
-                            performExit(action);
+                            if (action === 'finish') {
+                                performFinishExit();
+                            } else {
+                                performExit(action);
+                            }
                         },
                     },
                     {
@@ -223,7 +300,7 @@ export function ActiveWorkoutScreen() {
                 ]
             );
         },
-        [templateInfo, hasTemplateChanges, performExit, saveTemplateAndExit]
+        [templateInfo, hasTemplateChanges, performExit, performFinishExit, saveTemplateAndExit]
     );
 
     // Handle cancel workout

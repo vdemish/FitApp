@@ -7,6 +7,7 @@
 
 import { supabase } from './supabase';
 import type { Workout, WorkoutExercise, Set, WorkoutStatus, WorkoutTemplate, SelectedExercise } from '@/types';
+import { loadExercisePrefills, loadTemplatePrefill, type PrefillSetValues } from './workoutPrefillService';
 
 // ============================================================================
 // WORKOUTS
@@ -300,6 +301,12 @@ export async function createWorkoutFromTemplate(templateId: string): Promise<Wor
         throw new Error('Template not found');
     }
 
+    const templatePrefillItems = await loadTemplatePrefill(user.id, templateId);
+    const templatePrefillMap = new Map<string, PrefillSetValues[]>();
+    templatePrefillItems?.forEach((item) => {
+        templatePrefillMap.set(`${item.exerciseId}:${item.sortOrder}`, item.sets || []);
+    });
+
     // 2. Create Workout
     const { data: workout, error: workoutError } = await supabase
         .from('workouts')
@@ -355,14 +362,19 @@ export async function createWorkoutFromTemplate(templateId: string): Promise<Wor
                 const setsCount = (templateExercise?.target_sets && templateExercise.target_sets > 0)
                     ? templateExercise.target_sets
                     : 1;
+                const prefillKey = `${createdExercise.exercise_id}:${createdExercise.sort_order}`;
+                const prefillSets = templatePrefillMap.get(prefillKey) || [];
 
                 // Generate set objects
                 for (let i = 1; i <= setsCount; i++) {
+                    const prefillSet = prefillSets[i - 1];
                     setsToCreate.push({
                         workout_exercise_id: createdExercise.id,
                         set_number: i,
-                        weight: 0,
-                        reps: 0,
+                        weight: prefillSet?.weight ?? 0,
+                        reps: prefillSet?.reps ?? 0,
+                        distance: prefillSet?.distance,
+                        duration_seconds: prefillSet?.durationSeconds,
                         status: 'pending',
                     });
                 }
@@ -412,6 +424,10 @@ export async function createWorkoutFromExercises(exercises: SelectedExercise[]):
     if (!user) throw new Error('User not authenticated');
 
     const clampSets = (value: number) => Math.min(19, Math.max(1, value));
+    const exercisePrefills = await loadExercisePrefills(
+        user.id,
+        exercises.map((exercise) => exercise.id)
+    );
     const targetSetsBySortOrder = new Map(
         exercises.map((exercise, index) => [index, clampSets(exercise.target_sets ?? 1)])
     );
@@ -458,13 +474,17 @@ export async function createWorkoutFromExercises(exercises: SelectedExercise[]):
             const setsToCreate: any[] = [];
 
             newExercises.forEach((exercise) => {
+                const prefillSets = exercisePrefills.get(exercise.exercise_id) || [];
                 const setsCount = targetSetsBySortOrder.get(exercise.sort_order) ?? 1;
                 for (let i = 1; i <= setsCount; i++) {
+                    const prefillSet = prefillSets[i - 1];
                     setsToCreate.push({
                         workout_exercise_id: exercise.id,
                         set_number: i,
-                        weight: 0,
-                        reps: 0,
+                        weight: prefillSet?.weight ?? 0,
+                        reps: prefillSet?.reps ?? 0,
+                        distance: prefillSet?.distance,
+                        duration_seconds: prefillSet?.durationSeconds,
                         status: 'pending',
                     });
                 }
