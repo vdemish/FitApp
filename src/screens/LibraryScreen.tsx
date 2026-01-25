@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable, Alert, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
@@ -12,6 +12,7 @@ import { CategoryPill } from '@/components';
 import { useExercises, useThemeColors, useWorkoutTemplates } from '@/hooks';
 import { deleteWorkoutTemplate, saveNewTemplate } from '@/services/workoutService';
 import { triggerSelection, triggerImpact } from '@/utils/haptics';
+import { getExerciseIconSource } from '@/utils/exerciseIcons';
 import { colors, spacing, radius } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -264,7 +265,7 @@ export function LibraryScreen() {
                     highlighted && styles.exerciseIconHighlighted,
                     isSelectionMode && selected && styles.exerciseIconSelected
                 ]}>
-                    <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
+                    <Image source={getExerciseIconSource(exercise.icon)} style={styles.exerciseIconImage} />
                 </View>
                 <View style={styles.exerciseInfo}>
                     <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
@@ -331,16 +332,6 @@ export function LibraryScreen() {
                 )}
             </GlassCard>
         );
-    };
-
-    const getExerciseEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '🏋️',
-            sports_gymnastics: '💪',
-            accessibility_new: '🧘',
-            directions_run: '🏃',
-        };
-        return iconMap[icon] || '🏋️';
     };
 
     const getTemplateEmoji = (icon: string): string => {
@@ -791,8 +782,10 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primary.DEFAULT,
         borderColor: colors.primary.DEFAULT,
     },
-    exerciseEmoji: {
-        fontSize: 28,
+    exerciseIconImage: {
+        width: 28,
+        height: 28,
+        resizeMode: 'contain',
     },
     exerciseInfo: {
         flex: 1,

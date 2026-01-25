@@ -18,7 +18,8 @@ INSERT INTO public.muscle_groups (name, icon, color, sort_order) VALUES
     ('Legs', 'sprint', 'accent-orange', 3),
     ('Shoulders', 'directions_run', 'accent-green', 4),
     ('Arms', 'front_hand', 'accent-blue', 5),
-    ('Core', 'self_improvement', 'accent-pink', 6)
+    ('Core', 'self_improvement', 'accent-pink', 6),
+    ('Full Body', 'sports_gymnastics', 'accent-blue', 7)
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================================

@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
     Dimensions,
     Alert,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Heading, Label, Input } from '@/components/ui';
@@ -22,6 +23,7 @@ import { CategoryPill } from '@/components/CategoryPill';
 import { useWorkoutHistory, useWorkoutTemplates, useExercises, useThemeColors } from '@/hooks';
 import { deleteWorkoutTemplate } from '@/services/workoutService';
 import { triggerSelection } from '@/utils/haptics';
+import { getExerciseIconSource } from '@/utils/exerciseIcons';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise, Workout, WorkoutTemplate, SelectedExercise } from '@/types';
 
@@ -212,17 +214,6 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         console.log('[StartWorkoutModal] Starting with exercises:', selectedExercises.map(e => e.name));
         onClose();
         onStartWorkout?.({ exercises: selectedExercises });
-    };
-
-    // Get exercise emoji
-    const getExerciseEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '🏋️',
-            sports_gymnastics: '💪',
-            accessibility_new: '🧘',
-            directions_run: '🏃',
-        };
-        return iconMap[icon] || '🏋️';
     };
 
     // Get template emoji
@@ -489,7 +480,7 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                                         dynamicStyles.exerciseIcon,
                                                         selected && styles.exerciseIconSelected,
                                                     ]}>
-                                                        <Text style={styles.exerciseEmoji}>{getExerciseEmoji(exercise.icon)}</Text>
+                                                        <Image source={getExerciseIconSource(exercise.icon)} style={styles.exerciseIconImage} />
                                                     </View>
                                                     <View style={styles.exerciseInfo}>
                                                         <Heading level={3} style={styles.exerciseName} numberOfLines={1} ellipsizeMode="tail">
@@ -731,8 +722,10 @@ const styles = StyleSheet.create({
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         borderColor: colors.primary.DEFAULT,
     },
-    exerciseEmoji: {
-        fontSize: 24,
+    exerciseIconImage: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     exerciseInfo: {
         flex: 1,

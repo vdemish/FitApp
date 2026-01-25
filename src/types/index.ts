@@ -28,7 +28,7 @@ export interface MuscleGroup {
 // EXERCISES (Библиотека упражнений)
 // ============================================================================
 
-export type ExerciseType = 'Compound' | 'Isolation' | 'Heavy' | 'Stretch';
+export type ExerciseType = 'Compound' | 'Isolation' | 'Heavy' | 'Stretch' | 'Cardio';
 
 /** Tracking type for exercises (matches DB ENUM) */
 export type ExerciseTrackingType =

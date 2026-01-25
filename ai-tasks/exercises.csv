@@ -1,0 +1,71 @@
+name,muscle_group,exercise_type,tracking_type,icon,color,instructions,is_custom
+Barbell Bench Press,Chest,Heavy,weight_reps,barbell,,"Set your feet, squeeze the bar, and lower to mid-chest under control. Press up while keeping your shoulder blades pinned back.",false
+Incline Dumbbell Press,Chest,Compound,weight_reps,dumbbell,,"Set a slight incline and keep wrists stacked over elbows. Press up and slightly in without bouncing at the bottom.",false
+Dumbbell Floor Press,Chest,Compound,weight_reps,dumbbell,,"Lie on the floor and pause triceps on the ground each rep. Press with a tight upper back and neutral wrists.",false
+Push-Up,Chest,Compound,weighted_bodyweight,bodyweight,,"Brace your core and keep a straight line from head to heels. Lower until chest is near the floor and drive back up.",false
+Weighted Push-Up,Chest,Heavy,weighted_bodyweight,bodyweight,,"Add load securely and keep your elbows at about 45 degrees. Maintain full-body tension throughout.",false
+Cable Chest Fly,Chest,Isolation,weight_reps,cable,,"Keep a soft bend in the elbows and move from the shoulders. Bring hands together in front of the chest and squeeze.",false
+Dumbbell Fly,Chest,Isolation,weight_reps,dumbbell,,"Lower with control and keep elbows slightly bent. Stretch across the chest, then squeeze up without clanging dumbbells.",false
+Machine Chest Press,Chest,Compound,weight_reps,machine,,"Set the seat so handles align with mid-chest. Press smoothly and keep shoulders down and back.",false
+Chest-Supported Push-Up Hold,Chest,Isolation,duration,bodyweight,,"Lower into a strong mid-range push-up position and hold. Keep ribs down and breathe slowly.",false
+Pec Deck Fly,Chest,Isolation,weight_reps,machine,,"Keep your back on the pad and lead with elbows. Squeeze at the front, then return under control.",false
+Pull-Up,Back,Compound,weighted_bodyweight,pullup_bar,,"Start from a dead hang and pull chest toward the bar. Keep ribs down and avoid swinging.",false
+Chin-Up,Back,Compound,weighted_bodyweight,pullup_bar,,"Use a shoulder-width underhand grip and pull smoothly. Control the descent to a full hang.",false
+Weighted Pull-Up,Back,Heavy,weighted_bodyweight,pullup_bar,,"Add weight securely and keep your body tight. Pull high and lower slowly to full extension.",false
+Lat Pulldown,Back,Compound,weight_reps,cable,,"Pull the bar to upper chest while keeping shoulders down. Control the return and avoid leaning back excessively.",false
+Seated Cable Row,Back,Compound,weight_reps,cable,,"Sit tall and row toward your lower ribs. Squeeze your shoulder blades together, then reach forward under control.",false
+One-Arm Dumbbell Row,Back,Compound,weight_reps,dumbbell,,"Brace with a flat back and pull elbow toward your hip. Pause briefly at the top and lower slowly.",false
+Chest-Supported T-Bar Row,Back,Heavy,weight_reps,machine,,"Press chest into the pad and row without jerking. Keep your neck neutral and squeeze at peak contraction.",false
+Barbell Bent-Over Row,Back,Heavy,weight_reps,barbell,,"Hinge to a strong torso angle and keep core braced. Row to your midsection and lower with control.",false
+Straight-Arm Pulldown,Back,Isolation,weight_reps,cable,,"Keep elbows mostly straight and pull the bar to your thighs. Feel lats engage without shrugging.",false
+Face Pull,Back,Isolation,weight_reps,cable,,"Pull the rope toward your nose with elbows high. Rotate so knuckles point back and squeeze rear delts and upper back.",false
+Romanian Deadlift,Legs,Heavy,weight_reps,barbell,,"Hinge at the hips with a long spine and soft knees. Lower until hamstrings stretch, then drive hips forward.",false
+Back Squat,Legs,Heavy,weight_reps,barbell,,"Brace, sit down and back, and keep knees tracking over toes. Stand tall without losing midline tension.",false
+Front Squat,Legs,Heavy,weight_reps,barbell,,"Keep elbows high and torso upright. Descend under control, then drive up through midfoot.",false
+Goblet Squat,Legs,Compound,weight_reps,dumbbell,,"Hold the weight close and keep chest proud. Sit between your hips and stand smoothly.",false
+Bulgarian Split Squat,Legs,Compound,weight_reps,dumbbell,,"Keep front foot planted and torso slightly forward. Lower until front thigh is near parallel, then drive up.",false
+Walking Lunge,Legs,Compound,weight_reps,dumbbell,,"Step long enough to keep front knee over midfoot. Push through the front heel and keep hips level.",false
+Leg Press,Legs,Heavy,weight_reps,machine,,"Set feet mid-platform and lower until knees track comfortably. Press without locking out hard.",false
+Leg Extension,Legs,Isolation,weight_reps,machine,,"Set the pad above your ankles and lift smoothly. Pause at the top, then lower without slamming.",false
+Hamstring Curl Machine,Legs,Isolation,weight_reps,machine,,"Keep hips down and curl through full range. Control the eccentric for better hamstring tension.",false
+Standing Calf Raise,Legs,Isolation,weight_reps,machine,,"Rise onto the balls of your feet and squeeze at the top. Lower slowly to a full stretch at the bottom.",false
+Overhead Press,Shoulders,Heavy,weight_reps,barbell,,"Brace your core and press straight overhead. Keep ribs down and lock out with biceps near ears.",false
+Seated Dumbbell Shoulder Press,Shoulders,Compound,weight_reps,dumbbell,,"Press up without arching the lower back. Control down to just below chin level.",false
+Arnold Press,Shoulders,Compound,weight_reps,dumbbell,,"Rotate smoothly from palms-in to palms-out as you press. Keep elbows slightly forward and avoid flaring hard.",false
+Dumbbell Lateral Raise,Shoulders,Isolation,weight_reps,dumbbell,,"Lift to shoulder height with a slight elbow bend. Lead with elbows and avoid shrugging.",false
+Cable Lateral Raise,Shoulders,Isolation,weight_reps,cable,,"Stand tall and raise the handle out to the side. Keep tension throughout and control the lowering phase.",false
+Rear Delt Fly (Dumbbell),Shoulders,Isolation,weight_reps,dumbbell,,"Hinge forward and sweep arms out wide. Squeeze rear delts and keep neck neutral.",false
+Upright Row (Cable),Shoulders,Compound,weight_reps,cable,,"Pull up to upper chest with elbows leading. Keep wrists neutral and stop before shoulder pinch.",false
+Handstand Hold,Shoulders,Heavy,duration,bodyweight,,"Stack shoulders over hands and keep a tight midline. Hold steady while breathing calmly.",false
+Pike Push-Up,Shoulders,Compound,weighted_bodyweight,bodyweight,,"Hips high and head moves toward the floor between hands. Press back up keeping elbows angled slightly forward.",false
+Band Pull-Apart,Shoulders,Stretch,weight_reps,resistance_band,,"Pull the band apart to shoulder width without shrugging. Pause briefly, then return under control.",false
+Barbell Curl,Arms,Isolation,weight_reps,barbell,,"Keep elbows pinned to your sides and curl without swinging. Lower slowly to full extension.",false
+Dumbbell Hammer Curl,Arms,Isolation,weight_reps,dumbbell,,"Curl with neutral grip and steady torso. Squeeze at the top and control the descent.",false
+Incline Dumbbell Curl,Arms,Isolation,weight_reps,dumbbell,,"Let arms hang back for a full stretch. Curl smoothly and avoid letting elbows drift forward.",false
+Cable Triceps Pushdown,Arms,Isolation,weight_reps,cable,,"Lock elbows by your sides and extend fully. Keep shoulders down and control back up.",false
+Overhead Triceps Extension (Dumbbell),Arms,Isolation,weight_reps,dumbbell,,"Keep elbows pointing forward and ribs down. Extend to full lockout, then lower with control.",false
+Close-Grip Bench Press,Arms,Heavy,weight_reps,barbell,,"Use a shoulder-width grip and keep elbows tucked. Lower to mid-chest and press while staying tight.",false
+Parallel Bar Dip,Arms,Compound,weighted_bodyweight,dip_bars,,"Keep shoulders down and descend under control. Press up without shrugging at the top.",false
+Weighted Dip,Arms,Heavy,weighted_bodyweight,dip_bars,,"Add weight securely and keep a stable torso. Descend smoothly and lock out with control.",false
+EZ-Bar Skullcrusher,Arms,Isolation,weight_reps,barbell,,"Keep upper arms still and lower the bar toward your forehead. Extend elbows to finish without flaring.",false
+Farmer's Carry,Arms,Heavy,duration,dumbbell,,"Stand tall and walk with controlled steps. Keep shoulders packed and grip the handles hard.",false
+Plank,Core,Isolation,duration,bodyweight,,"Brace as if preparing for a punch and keep hips level. Hold a straight line while breathing quietly.",false
+Side Plank,Core,Isolation,duration,bodyweight,,"Stack shoulders and hips and lift into a straight line. Keep hips high and neck neutral.",false
+Hollow Body Hold,Core,Heavy,duration,bodyweight,,"Press lower back into the floor and extend arms and legs. Hold tension without letting ribs flare.",false
+Dead Bug,Core,Isolation,weight_reps,bodyweight,,"Keep low back glued to the floor as you extend opposite arm and leg. Move slowly and return with control.",false
+Hanging Knee Raise,Core,Compound,weighted_bodyweight,pullup_bar,,"Hang tall and raise knees toward chest without swinging. Control down to a dead hang each rep.",false
+Hanging Leg Raise,Core,Heavy,weighted_bodyweight,pullup_bar,,"Keep legs straight and lift using your abs, not momentum. Lower slowly and avoid rocking.",false
+Cable Woodchop,Core,Compound,weight_reps,cable,,"Rotate through the torso with hips stable. Pull diagonally across your body and return under control.",false
+Pallof Press,Core,Isolation,weight_reps,cable,,"Press the handle straight out and resist rotation. Hold briefly, then bring it back with control.",false
+Ab Wheel Rollout,Core,Heavy,weighted_bodyweight,ab_wheel,,"Roll out slowly while keeping ribs down and hips tucked. Stop before your low back arches and pull back in.",false
+Russian Twist (Medicine Ball),Core,Compound,weight_reps,medicine_ball,,"Lean back slightly and rotate shoulders side to side. Keep feet stable and move smoothly.",false
+Burpee,Full Body,Cardio,duration,bodyweight,,"Drop to the floor, kick back, then jump up smoothly. Keep a steady pace and land softly.",false
+Kettlebell Swing,Full Body,Compound,weight_reps,kettlebell,,"Hinge at the hips and snap them forward to drive the bell. Keep arms relaxed and spine neutral.",false
+Thruster (Dumbbell),Full Body,Heavy,weight_reps,dumbbell,,"Squat with control then drive to an overhead press in one motion. Keep core braced and elbows under the weights.",false
+Clean and Press (Kettlebell),Full Body,Heavy,weight_reps,kettlebell,,"Clean to the rack with a tight wrist, then press overhead. Reset each rep with control and full-body tension.",false
+Renegade Row,Full Body,Compound,weight_reps,dumbbell,,"Hold a strong plank and row one dumbbell at a time. Minimize hip sway and keep shoulders square.",false
+Mountain Climber,Full Body,Cardio,duration,bodyweight,,"Stay in a plank and drive knees alternately toward chest. Keep hips low and move rhythmically.",false
+Jump Rope,Full Body,Cardio,duration,jump_rope,,"Keep jumps small and land softly on the balls of your feet. Maintain a relaxed grip and steady cadence.",false
+Treadmill Run,Full Body,Cardio,distance_duration,treadmill,,"Run tall with a quick, light stride. Set a sustainable pace and keep breathing controlled.",false
+Rowing Erg,Full Body,Cardio,distance_duration,rower,,"Drive with legs first, then hinge and pull to ribs. Recover smoothly and keep strokes consistent.",false
+Bike Sprint Intervals,Full Body,Cardio,distance_duration,bike,,"Accelerate hard for the work interval, then spin easy to recover. Keep effort consistent across rounds.",false

@@ -40,17 +40,25 @@ export function NumericInput({
     const themeColors = useThemeColors();
     const inputRef = useRef<TextInput>(null);
 
+    const normalizeValue = (rawValue: number | null | undefined) =>
+        Number.isFinite(rawValue) ? rawValue : 0;
+
+    const formatValue = (rawValue: number | null | undefined) => {
+        const normalizedValue = normalizeValue(rawValue);
+        return allowDecimals
+            ? Number(normalizedValue.toFixed(2)).toString()
+            : normalizedValue.toString();
+    };
+
     // Local string state for text input
-    const [inputValue, setInputValue] = useState(
-        allowDecimals ? Number(value.toFixed(2)).toString() : value.toString()
-    );
+    const [inputValue, setInputValue] = useState(formatValue(value));
     const [isFocused, setIsFocused] = useState(false);
 
     // Handle focus - select all text
     const handleFocus = () => {
         setIsFocused(true);
         // Update input value to current value on focus
-        setInputValue(allowDecimals ? Number(value.toFixed(2)).toString() : value.toString());
+        setInputValue(formatValue(value));
         // Select all text after a brief delay (allows the input to render)
         setTimeout(() => {
             inputRef.current?.setSelection(0, inputValue.length + 10);
@@ -79,7 +87,9 @@ export function NumericInput({
         onBlur?.(numValue);
 
         // Update local state with formatted value
-        setInputValue(allowDecimals ? Number(numValue.toFixed(2)).toString() : numValue.toString());
+        setInputValue(
+            allowDecimals ? Number(numValue.toFixed(2)).toString() : numValue.toString()
+        );
     };
 
     // Handle text change
@@ -97,7 +107,7 @@ export function NumericInput({
     // Sync with external value changes when not focused
     React.useEffect(() => {
         if (!isFocused) {
-            setInputValue(allowDecimals ? Number(value.toFixed(2)).toString() : value.toString());
+            setInputValue(formatValue(value));
         }
     }, [value, allowDecimals, isFocused]);
 

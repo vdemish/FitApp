@@ -13,6 +13,7 @@ import {
     Pressable,
     ActivityIndicator,
     TextInput,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { CategoryPill } from '@/components/CategoryPill';
 import { useExercises, useThemeColors } from '@/hooks';
+import { getExerciseIconSource } from '@/utils/exerciseIcons';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { Exercise } from '@/types';
 
@@ -103,17 +105,6 @@ export function AddExerciseModal({ visible, onClose, onAdd }: AddExerciseModalPr
         // Reset selection after adding (optional, depending on UX preference)
         setSelectedExerciseIds([]);
         onClose();
-    };
-
-    // Get exercise emoji
-    const getExerciseEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '🏋️',
-            sports_gymnastics: '💪',
-            accessibility_new: '🧘',
-            directions_run: '🏃',
-        };
-        return iconMap[icon] || '🏋️';
     };
 
     return (
@@ -203,9 +194,7 @@ export function AddExerciseModal({ visible, onClose, onAdd }: AddExerciseModalPr
                                                 selected && styles.exerciseIconSelected,
                                             ]}
                                         >
-                                            <Text style={styles.exerciseEmoji}>
-                                                {getExerciseEmoji(exercise.icon)}
-                                            </Text>
+                                            <Image source={getExerciseIconSource(exercise.icon)} style={styles.exerciseIconImage} />
                                         </View>
                                         <View style={styles.exerciseInfo}>
                                             <Heading level={3}>{exercise.name}</Heading>
@@ -348,8 +337,10 @@ const styles = StyleSheet.create({
         backgroundColor: `${colors.primary.DEFAULT}1A`,
         borderColor: colors.primary.DEFAULT,
     },
-    exerciseEmoji: {
-        fontSize: 24,
+    exerciseIconImage: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     exerciseInfo: {
         flex: 1,

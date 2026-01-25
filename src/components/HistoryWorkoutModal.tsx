@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, Modal, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { View, StyleSheet, Modal, ScrollView, ActivityIndicator, Pressable, Text, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { Text } from 'react-native';
 import { useThemeColors } from '@/hooks';
 import { useSettings } from '@/context/SettingsContext';
 import { getWorkoutDetails } from '@/services/workoutService';
 import { triggerSelection } from '@/utils/haptics';
+import { getExerciseIconSource } from '@/utils/exerciseIcons';
 import { colors, spacing } from '@/theme';
 import { type Workout, type Set, convertWeight, type UnitPreference } from '@/types';
 
@@ -187,9 +187,7 @@ export function HistoryWorkoutModal({ visible, workoutId, onClose }: HistoryWork
                                 return (
                                     <GlassCard key={exercise.id} style={styles.exerciseCard}>
                                         <View style={styles.exerciseHeader}>
-                                            <Text style={styles.exerciseEmoji}>
-                                                {exercise.exercise?.icon === 'fitness_center' ? '🏋️' : '💪'}
-                                            </Text>
+                                            <Image source={getExerciseIconSource(exercise.exercise?.icon)} style={styles.exerciseIconImage} />
                                             <View>
                                                 <Heading level={3}>{exercise.exercise?.name || 'Unknown Exercise'}</Heading>
                                                 <UIText variant="body-sm" muted>
@@ -360,8 +358,10 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
         gap: spacing.md,
     },
-    exerciseEmoji: {
-        fontSize: 24,
+    exerciseIconImage: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     setsTable: {
         marginTop: spacing.xs,
