@@ -334,11 +334,18 @@ export function LibraryScreen() {
         );
     };
 
-    const getTemplateEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '📋', // Default for custom
-        };
-        return iconMap[icon] || '📋';
+    const formatTemplateTitle = (name: string): string => {
+        const words = name.trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+            return '---';
+        }
+
+        const upperWords = words.map(word => word.toUpperCase());
+        const firstLine = upperWords[0];
+        const secondLine = upperWords[1];
+        const thirdLine = upperWords.slice(2).join(' ');
+
+        return [firstLine, secondLine, thirdLine].filter(Boolean).join('\n');
     };
 
     if (loading && !refreshing && exercises.length === 0) {
@@ -457,10 +464,9 @@ export function LibraryScreen() {
                                             navigation.navigate('ActiveWorkout', { templateId: template.id });
                                         }}
                                     >
-                                        <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                        <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
-                                            {template.name}
-                                        </UIText>
+                                        <Text style={styles.templateTitle} numberOfLines={3}>
+                                            {formatTemplateTitle(template.name)}
+                                        </Text>
                                     </GlassCard>
                                 ))}
                             </ScrollView>
@@ -509,10 +515,9 @@ export function LibraryScreen() {
                                                 <Text style={styles.templateDeleteText}>Delete</Text>
                                             </Pressable>
                                         )}
-                                        <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                        <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
-                                            {template.name}
-                                        </UIText>
+                                        <Text style={styles.templateTitle} numberOfLines={3}>
+                                            {formatTemplateTitle(template.name)}
+                                        </Text>
                                     </GlassCard>
                                 ))}
                             </ScrollView>
@@ -745,13 +750,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
     },
-    templateEmoji: {
-        fontSize: 27,
-    },
-    templateName: {
-        textAlign: 'center',
-        fontSize: 15,
-        fontWeight: '600',
+    templateTitle: {
+        textAlign: 'left',
+        fontSize: 16,
+        fontWeight: '700',
+        lineHeight: 18,
     },
 
     // Exercise Card
@@ -783,8 +786,8 @@ const styles = StyleSheet.create({
         borderColor: colors.primary.DEFAULT,
     },
     exerciseIconImage: {
-        width: 28,
-        height: 28,
+        width: 36,
+        height: 36,
         resizeMode: 'contain',
     },
     exerciseInfo: {

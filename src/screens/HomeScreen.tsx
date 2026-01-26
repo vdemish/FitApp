@@ -103,11 +103,18 @@ export function HomeScreen() {
         }
     }, [navigation]);
 
-    const getTemplateEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '📋',
-        };
-        return iconMap[icon] || '📋';
+    const formatTemplateTitle = (name: string): string => {
+        const words = name.trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+            return '---';
+        }
+
+        const upperWords = words.map(word => word.toUpperCase());
+        const firstLine = upperWords[0];
+        const secondLine = upperWords[1];
+        const thirdLine = upperWords.slice(2).join(' ');
+
+        return [firstLine, secondLine, thirdLine].filter(Boolean).join('\n');
     };
 
     const publicTemplates = useMemo(() => templates.filter(template => template.is_system), [templates]);
@@ -217,10 +224,9 @@ export function HomeScreen() {
                                         navigation.navigate('ActiveWorkout', { templateId: template.id });
                                     }}
                                 >
-                                    <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                    <UIText variant="body-sm" numberOfLines={2} style={styles.templateName}>
-                                        {template.name}
-                                    </UIText>
+                                    <Text style={styles.templateTitle} numberOfLines={3}>
+                                        {formatTemplateTitle(template.name)}
+                                    </Text>
                                 </GlassCard>
                             ))}
                         </ScrollView>
@@ -338,16 +344,16 @@ const styles = StyleSheet.create({
         paddingRight: spacing.sm,
     },
     templateCard: {
-        width: 120,
+        width: 105,
         padding: spacing.md,
         alignItems: 'center',
         gap: spacing.xs,
     },
-    templateEmoji: {
-        fontSize: 20,
-    },
-    templateName: {
-        textAlign: 'center',
+    templateTitle: {
+        textAlign: 'left',
+        fontSize: 16,
+        fontWeight: '700',
+        lineHeight: 18,
     },
 
     startButton: {

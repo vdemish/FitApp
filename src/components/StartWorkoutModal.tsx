@@ -216,16 +216,18 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
         onStartWorkout?.({ exercises: selectedExercises });
     };
 
-    // Get template emoji
-    const getTemplateEmoji = (icon: string): string => {
-        const iconMap: Record<string, string> = {
-            fitness_center: '🏋️',
-            sports_martial_arts: '🥊',
-            self_improvement: '🧘',
-            directions_run: '🏃',
-            accessibility_new: '💪',
-        };
-        return iconMap[icon] || '📋';
+    const formatTemplateTitle = (name: string): string => {
+        const words = name.trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+            return '---';
+        }
+
+        const upperWords = words.map(word => word.toUpperCase());
+        const firstLine = upperWords[0];
+        const secondLine = upperWords[1];
+        const thirdLine = upperWords.slice(2).join(' ');
+
+        return [firstLine, secondLine, thirdLine].filter(Boolean).join('\n');
     };
 
     // Format date for history cards
@@ -331,10 +333,9 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                             }}
                                             onPressIn={() => triggerSelection()}
                                         >
-                                            <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                            <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
-                                                {template.name}
-                                            </UIText>
+                                            <Text style={styles.templateTitle} numberOfLines={3}>
+                                                {formatTemplateTitle(template.name)}
+                                            </Text>
                                         </GlassCard>
                                     ))}
                                 </ScrollView>
@@ -393,10 +394,9 @@ export function StartWorkoutModal({ visible, onClose, onStartWorkout }: StartWor
                                                     <Text style={styles.templateDeleteText}>Delete</Text>
                                                 </Pressable>
                                             )}
-                                            <Text style={styles.templateEmoji}>{getTemplateEmoji(template.icon)}</Text>
-                                            <UIText variant="body-sm" style={styles.templateName} numberOfLines={2}>
-                                                {template.name}
-                                            </UIText>
+                                            <Text style={styles.templateTitle} numberOfLines={3}>
+                                                {formatTemplateTitle(template.name)}
+                                            </Text>
                                         </GlassCard>
                                     ))}
                                 </ScrollView>
@@ -669,13 +669,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
     },
-    templateEmoji: {
-        fontSize: 27,
-        marginBottom: spacing.sm,
-    },
-    templateName: {
-        textAlign: 'center',
-        fontSize: 15,
+    templateTitle: {
+        textAlign: 'left',
+        fontSize: 16,
+        fontWeight: '700',
+        lineHeight: 18,
     },
     emptyCard: {
         padding: spacing.lg,
@@ -723,8 +721,8 @@ const styles = StyleSheet.create({
         borderColor: colors.primary.DEFAULT,
     },
     exerciseIconImage: {
-        width: 24,
-        height: 24,
+        width: 32,
+        height: 32,
         resizeMode: 'contain',
     },
     exerciseInfo: {
