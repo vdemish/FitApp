@@ -63,7 +63,10 @@ export function RootNavigator() {
                     />
                 </>
             ) : (
-                <Stack.Screen name="Login" component={LoginScreen} />
+                <>
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="Main" component={TabNavigator} />
+                </>
             )}
         </Stack.Navigator>
     );

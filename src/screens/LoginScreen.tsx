@@ -13,6 +13,8 @@ import {
     Platform,
     ScrollView,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/AuthContext';
@@ -20,12 +22,15 @@ import { useThemeColors } from '@/hooks';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
+import type { RootStackParamList } from '@/navigation/RootNavigator';
 
 type AuthMode = 'signIn' | 'signUp';
+type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export function LoginScreen() {
     const { signIn, signUp, loading, error, clearError } = useAuth();
     const themeColors = useThemeColors();
+    const navigation = useNavigation<LoginNavigationProp>();
 
     const [mode, setMode] = useState<AuthMode>('signIn');
     const [email, setEmail] = useState('');
@@ -58,6 +63,11 @@ export function LoginScreen() {
     const toggleMode = () => {
         clearError();
         setMode(mode === 'signIn' ? 'signUp' : 'signIn');
+    };
+
+    const handleOAuthPress = () => {
+        clearError();
+        navigation.replace('Main');
     };
 
     const isValid = mode === 'signIn'
@@ -181,21 +191,23 @@ export function LoginScreen() {
                                         variant="secondary"
                                         size="lg"
                                         fullWidth
-                                        onPress={() => { }}
+                                        onPress={handleOAuthPress}
+                                        disabled={loading}
                                         testID="google-button"
                                     >
                                         <Text style={[styles.oauthIcon, dynamicStyles.oauthIcon]}>G</Text>
-                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Продолжить с Google</Text>
+                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Sign in with Google</Text>
                                     </Button>
                                     <Button
                                         variant="secondary"
                                         size="lg"
                                         fullWidth
-                                        onPress={() => { }}
+                                        onPress={handleOAuthPress}
+                                        disabled={loading}
                                         testID="apple-button"
                                     >
-                                        <Text style={[styles.oauthIcon, dynamicStyles.oauthIcon]}></Text>
-                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Продолжить с Apple</Text>
+                                        <Text style={[styles.oauthIcon, dynamicStyles.oauthIcon]}></Text>
+                                        <Text style={[styles.oauthText, dynamicStyles.oauthText]}>Sign in with Apple</Text>
                                     </Button>
                                 </View>
 
