@@ -21,6 +21,9 @@ export interface UserProfile {
     current_weight_kg: number | null;
     current_height_cm: number | null;
     unit_preference: 'kg' | 'lbs';
+    age: number | null;
+    gender: Gender | null;
+    training_goal: TrainingGoal | null;
     created_at: string;
     updated_at: string;
 }
@@ -50,6 +53,33 @@ export interface AuthState {
 export type OAuthProvider = 'google' | 'apple';
 
 /**
+ * Пол пользователя
+ */
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+
+/**
+ * Цель тренировок
+ */
+export type TrainingGoal =
+    | 'lose_weight'
+    | 'build_muscle'
+    | 'maintain'
+    | 'improve_endurance'
+    | 'general_fitness';
+
+/**
+ * Данные для локального обновления профиля
+ */
+export interface ProfileUpdateData {
+    full_name?: string | null;
+    age?: number | null;
+    gender?: Gender | null;
+    training_goal?: TrainingGoal | null;
+    current_weight_kg?: number | null;
+    current_height_cm?: number | null;
+}
+
+/**
  * Полный тип контекста аутентификации
  */
 export interface AuthContextType extends AuthState {
@@ -60,6 +90,7 @@ export interface AuthContextType extends AuthState {
     updateEmail: (newEmail: string) => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
     updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+    updateProfile: (updates: ProfileUpdateData) => Promise<void>;
     deleteAccount: () => Promise<void>;
     clearError: () => void;
 }

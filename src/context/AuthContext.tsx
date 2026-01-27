@@ -15,7 +15,7 @@ import React, {
 } from 'react';
 
 import * as authService from '@/services/authService';
-import type { AuthContextType, AuthState, OAuthProvider } from '@/types/auth';
+import type { AuthContextType, AuthState, OAuthProvider, ProfileUpdateData, UserProfile } from '@/types/auth';
 
 // ============================================================================
 // СОЗДАНИЕ КОНТЕКСТА
@@ -214,6 +214,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
+    const updateProfile = useCallback(async (updates: ProfileUpdateData) => {
+        const now = new Date().toISOString();
+        setState(prev => {
+            const baseProfile: UserProfile = prev.profile ?? {
+                id: prev.user?.id ?? 'local',
+                full_name: null,
+                avatar_url: null,
+                subscription_tier: 'free',
+                current_weight_kg: null,
+                current_height_cm: null,
+                unit_preference: 'kg',
+                age: null,
+                gender: null,
+                training_goal: null,
+                created_at: now,
+                updated_at: now,
+            };
+
+            return {
+                ...prev,
+                profile: {
+                    ...baseProfile,
+                    ...updates,
+                    updated_at: now,
+                },
+            };
+        });
+    }, []);
+
     const deleteAccount = useCallback(async () => {
         setState(prev => ({ ...prev, loading: true, error: null }));
 
@@ -239,9 +268,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         updateEmail,
         resetPassword,
         updatePassword,
+        updateProfile,
         deleteAccount,
         clearError,
-    }), [state, signIn, signUp, signOut, signInWithOAuth, updateEmail, resetPassword, updatePassword, deleteAccount, clearError]);
+    }), [state, signIn, signUp, signOut, signInWithOAuth, updateEmail, resetPassword, updatePassword, updateProfile, deleteAccount, clearError]);
 
     return (
         <AuthContext.Provider value={value}>

@@ -14,6 +14,7 @@ import { useUserStats, useThemeColors } from '@/hooks';
 import { triggerSelection } from '@/utils/haptics';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
+import { ProfileEditorModal } from '@/components/ProfileEditorModal';
 import { colors, typography, spacing, radius } from '@/theme';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
 
@@ -24,6 +25,7 @@ export function ProfileScreen() {
     const { activeTheme, setTheme, restTimerSounds, toggleRestTimerSounds } = useSettings();
     const themeColors = useThemeColors();
     const [refreshing, setRefreshing] = useState(false);
+    const [profileEditorVisible, setProfileEditorVisible] = useState(false);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -170,13 +172,19 @@ export function ProfileScreen() {
                         <SettingsRow
                             icon="👤"
                             label="Personal Information"
-                            onPress={() => navigation.navigate('AccountSettings')}
+                            onPress={() => setProfileEditorVisible(true)}
                         />
                         <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
                             icon="📊"
                             label="Training Metrics"
                             onPress={() => console.log('Training Metrics')}
+                        />
+                        <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
+                        <SettingsRow
+                            icon="🔐"
+                            label="Account & Security"
+                            onPress={() => navigation.navigate('AccountSettings')}
                         />
                         <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
@@ -253,6 +261,11 @@ export function ProfileScreen() {
                 {/* Version Info */}
                 <Label style={styles.versionInfo}>Version 2.4.0 (Build 982)</Label>
             </ScrollView>
+
+            <ProfileEditorModal
+                visible={profileEditorVisible}
+                onClose={() => setProfileEditorVisible(false)}
+            />
         </SafeAreaView>
     );
 }
