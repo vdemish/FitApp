@@ -8,15 +8,17 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, Pressable
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard, Button, Input, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
-import { CategoryPill } from '@/components';
+import { CategoryPill, ExerciseDetailsModal } from '@/components';
 import { useExercises, useThemeColors, useWorkoutTemplates } from '@/hooks';
 import { deleteWorkoutTemplate, saveNewTemplate } from '@/services/workoutService';
+import { getExerciseHistory } from '@/services/exerciseService';
 import { triggerSelection, triggerImpact } from '@/utils/haptics';
 import { getExerciseIconSource } from '@/utils/exerciseIcons';
 import { colors, spacing, radius } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Exercise, SelectedExercise, WorkoutTemplate } from '@/types';
+import type { Exercise, ExerciseHistory, SelectedExercise, WorkoutTemplate } from '@/types';
+import { Asset } from 'expo-asset';
 
 type RootStackParamList = {
     ActiveWorkout: { templateId?: string; exercises?: SelectedExercise[] };
@@ -56,6 +58,13 @@ export function LibraryScreen() {
         allExercises: false,
     });
 
+    // Exercise details modal state
+    const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+    const [exerciseHistory, setExerciseHistory] = useState<ExerciseHistory | null>(null);
+    const [detailsShareUri, setDetailsShareUri] = useState<string | null>(null);
+    const [isDetailsVisible, setIsDetailsVisible] = useState(false);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+
     const toggleSection = useCallback((key: keyof typeof collapsedSections) => {
         triggerSelection();
         setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -75,6 +84,36 @@ export function LibraryScreen() {
             setRefreshing(false);
         }
     }, [refetchExercises, refetchTemplates]);
+
+    const loadExerciseDetails = useCallback(async (exercise: Exercise) => {
+        setDetailsLoading(true);
+        try {
+            const history = await getExerciseHistory(exercise.id);
+            setExerciseHistory(history);
+        } catch (err) {
+            console.error('[LibraryScreen] Failed to load exercise history:', err);
+            setExerciseHistory(null);
+        }
+
+        try {
+            const iconSource = getExerciseIconSource(exercise.icon);
+            const asset = Asset.fromModule(iconSource);
+            await asset.downloadAsync();
+            setDetailsShareUri(asset.localUri ?? asset.uri ?? null);
+        } catch (err) {
+            console.error('[LibraryScreen] Failed to prepare share asset:', err);
+            setDetailsShareUri(null);
+        } finally {
+            setDetailsLoading(false);
+        }
+    }, []);
+
+    const closeDetails = useCallback(() => {
+        setIsDetailsVisible(false);
+        setActiveExercise(null);
+        setExerciseHistory(null);
+        setDetailsShareUri(null);
+    }, []);
 
     // Dynamic styles based on theme
     const dynamicStyles = useMemo(() => ({
@@ -254,8 +293,9 @@ export function LibraryScreen() {
                         toggleExerciseSelection(exercise);
                     } else {
                         triggerSelection();
-                        console.log('Selected:', exercise.name);
-                        // Future: Go to exercise details
+                        setActiveExercise(exercise);
+                        setIsDetailsVisible(true);
+                        loadExerciseDetails(exercise);
                     }
                 }}
             >
@@ -347,6 +387,20 @@ export function LibraryScreen() {
 
         return [firstLine, secondLine, thirdLine].filter(Boolean).join('\n');
     };
+
+    const detailTemplates = useMemo(() => {
+        if (!activeExercise) {
+            return { publicTemplates: [], privateTemplates: [] };
+        }
+
+        const matchesExercise = (template: WorkoutTemplate) =>
+            template.exercises?.some(ex => ex.exercise_id === activeExercise.id);
+
+        return {
+            publicTemplates: templates.filter(t => t.is_system && matchesExercise(t)),
+            privateTemplates: templates.filter(t => !t.is_system && matchesExercise(t)),
+        };
+    }, [activeExercise, templates]);
 
     if (loading && !refreshing && exercises.length === 0) {
         return (
@@ -634,6 +688,17 @@ export function LibraryScreen() {
                     </Pressable>
                 </Pressable>
             </Modal>
+
+            <ExerciseDetailsModal
+                visible={isDetailsVisible}
+                exercise={activeExercise}
+                history={exerciseHistory}
+                publicTemplates={detailTemplates.publicTemplates}
+                privateTemplates={detailTemplates.privateTemplates}
+                shareUri={detailsShareUri}
+                loading={detailsLoading}
+                onClose={closeDetails}
+            />
         </SafeAreaView>
     );
 }

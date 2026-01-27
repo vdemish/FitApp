@@ -6,7 +6,7 @@
  */
 
 import { supabase } from './supabase';
-import type { Exercise, MuscleGroup } from '@/types';
+import type { Exercise, MuscleGroup, ExerciseHistory } from '@/types';
 
 // ============================================================================
 // MUSCLE GROUPS
@@ -114,6 +114,29 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
     }
 
     return data || [];
+}
+
+// ============================================================================
+// EXERCISE HISTORY
+// ============================================================================
+
+export async function getExerciseHistory(exerciseId: string): Promise<ExerciseHistory | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from('exercise_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('exercise_id', exerciseId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('[ExerciseService] Ошибка загрузки exercise_history:', error.message);
+        throw error;
+    }
+
+    return data ?? null;
 }
 
 /**

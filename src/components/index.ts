@@ -11,6 +11,8 @@ export { IncrementDecrementInput } from './IncrementDecrementInput';
 export { NavItem } from './NavItem';
 export { StartWorkoutModal } from './StartWorkoutModal';
 export { HistoryWorkoutModal } from './HistoryWorkoutModal';
+export { ExerciseDetailsCard } from './ExerciseDetailsCard';
+export { ExerciseDetailsModal } from './ExerciseDetailsModal';
 
 // Active Workout компоненты
 export * from './active-workout';
