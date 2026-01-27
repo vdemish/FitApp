@@ -52,14 +52,6 @@ export function ProfileScreen() {
         }
     };
 
-    // Получаем инициалы для аватара
-    const getInitials = () => {
-        if (profile?.full_name) {
-            return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
-        }
-        return user?.email?.[0]?.toUpperCase() || '?';
-    };
-
     // Форматирование веса
     const formatWeight = (weight: number | null | undefined): string => {
         if (!weight) return '--';
@@ -115,19 +107,8 @@ export function ProfileScreen() {
                     <View style={styles.decorativeBlob} />
 
                     <View style={styles.profileHeader}>
-                        {/* Avatar */}
-                        <View style={styles.avatarContainer}>
-                            <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>{getInitials()}</Text>
-                            </View>
-                            <View style={styles.editBadge}>
-                                <Text style={styles.editIcon}>✏️</Text>
-                            </View>
-                        </View>
-
-                        {/* Name & Status */}
                         <View style={styles.profileInfo}>
-                            <Heading level={2}>{profile?.full_name || 'Пользователь'}</Heading>
+                            <Heading level={2}>{profile?.full_name || 'User'}</Heading>
                             <UIText variant="body-sm" accent uppercase style={styles.memberStatus}>
                                 Premium Member
                             </UIText>
@@ -349,51 +330,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.lg,
-    },
-    avatarContainer: {
-        position: 'relative',
-    },
-    avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: radius.xl,
-        backgroundColor: colors.primary.DEFAULT,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: `${colors.primary.DEFAULT}80`,
-    },
-    avatarText: {
-        fontSize: typography.fontSize.h1,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.background.dark,
-    },
-    editBadge: {
-        position: 'absolute',
-        bottom: -4,
-        right: -4,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.primary.DEFAULT,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.background.dark,
-        ...Platform.select({
-            ios: {
-                shadowColor: colors.black,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
-    },
-    editIcon: {
-        fontSize: 12,
     },
     profileInfo: {
         flex: 1,

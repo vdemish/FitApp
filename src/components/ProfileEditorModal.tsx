@@ -124,6 +124,7 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
     ) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
+
     const ageLabel = formData.age ? `${formData.age}` : 'Select age';
     const genderLabel = GENDER_OPTIONS.find(option => option.value === formData.gender)?.label ?? 'Select gender';
 
@@ -134,7 +135,6 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
         headerAction: { color: themeColors.primary },
         card: { backgroundColor: themeColors.surface, borderColor: themeColors.border },
         label: { color: themeColors.textSecondary },
-        avatarText: { color: themeColors.background },
         selectionText: { color: themeColors.textPrimary },
         selectionField: { borderColor: themeColors.border, backgroundColor: themeColors.background },
         helperText: { color: themeColors.textMuted },
@@ -167,16 +167,6 @@ export function ProfileEditorModal({ visible, onClose }: ProfileEditorModalProps
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[styles.card, dynamicStyles.card]}>
-                        <View style={styles.avatarBlock}>
-                            <View style={styles.avatar}>
-                                <Text style={[styles.avatarText, dynamicStyles.avatarText]}>
-                                    {formData.full_name?.[0]?.toUpperCase() || '?'}
-                                </Text>
-                            </View>
-                            <Pressable style={styles.changePhotoButton}>
-                                <Text style={styles.changePhotoText}>Change photo</Text>
-                            </Pressable>
-                        </View>
 
                         <View style={styles.field}>
                             <Text style={[styles.label, dynamicStyles.label]}>
@@ -346,31 +336,6 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         borderWidth: 1,
         gap: spacing.lg,
-    },
-    avatarBlock: {
-        alignItems: 'center',
-        gap: spacing.sm,
-    },
-    avatar: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        backgroundColor: colors.primary.DEFAULT,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: {
-        fontSize: typography.fontSize.h2,
-        fontWeight: typography.fontWeight.bold,
-    },
-    changePhotoButton: {
-        paddingVertical: spacing.xs,
-        paddingHorizontal: spacing.sm,
-    },
-    changePhotoText: {
-        fontSize: typography.fontSize.bodySm,
-        color: colors.primary.DEFAULT,
-        fontWeight: typography.fontWeight.semibold,
     },
     field: {
         gap: spacing.sm,
