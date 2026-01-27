@@ -11,6 +11,8 @@ import { useAuth } from '@/context/AuthContext';
 import { TabNavigator } from './TabNavigator';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { ActiveWorkoutScreen } from '@/screens/ActiveWorkoutScreen';
+import { LegalDocumentsScreen } from '@/screens/LegalDocumentsScreen';
+import { AccountSettings } from '@/screens/AccountSettings';
 import { useThemeColors } from '@/hooks';
 
 import { SelectedExercise } from '@/types';
@@ -18,6 +20,8 @@ import { SelectedExercise } from '@/types';
 export type RootStackParamList = {
     Login: undefined;
     Main: undefined;
+    AccountSettings: undefined;
+    LegalDocuments: undefined;
     ActiveWorkout: {
         workoutId?: string;
         templateId?: string;
@@ -52,6 +56,8 @@ export function RootNavigator() {
             {user ? (
                 <>
                     <Stack.Screen name="Main" component={TabNavigator} />
+                    <Stack.Screen name="AccountSettings" component={AccountSettings} />
+                    <Stack.Screen name="LegalDocuments" component={LegalDocumentsScreen} />
                     <Stack.Screen
                         name="ActiveWorkout"
                         component={ActiveWorkoutScreen}
@@ -65,6 +71,7 @@ export function RootNavigator() {
             ) : (
                 <>
                     <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="LegalDocuments" component={LegalDocumentsScreen} />
                     <Stack.Screen name="Main" component={TabNavigator} />
                 </>
             )}

@@ -87,6 +87,78 @@ export async function signOut(): Promise<void> {
 }
 
 // ============================================================================
+// ОБНОВЛЕНИЕ EMAIL / ПАРОЛЯ
+// ============================================================================
+
+/**
+ * Обновить email пользователя
+ */
+export async function updateEmail(newEmail: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+
+    if (error) {
+        throw new AuthServiceError(error.message, error);
+    }
+}
+
+/**
+ * Отправить письмо для сброса пароля
+ */
+export async function resetPassword(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+    if (error) {
+        throw new AuthServiceError(error.message, error);
+    }
+}
+
+/**
+ * Обновить пароль пользователя (с повторной аутентификацией)
+ */
+export async function updatePassword(
+    currentPassword: string,
+    newPassword: string
+): Promise<void> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError) {
+        throw new AuthServiceError(userError.message, userError);
+    }
+
+    if (!user?.email) {
+        throw new AuthServiceError('Не удалось получить текущий email пользователя');
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+    });
+
+    if (signInError) {
+        throw new AuthServiceError('Неверный текущий пароль', signInError);
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+        throw new AuthServiceError(error.message, error);
+    }
+}
+
+/**
+ * Удалить аккаунт пользователя через RPC
+ */
+export async function deleteAccount(): Promise<void> {
+    const { error } = await supabase.rpc('delete_user');
+
+    if (error) {
+        throw new AuthServiceError(error.message, error);
+    }
+
+    await signOut();
+}
+
+// ============================================================================
 // OAuth ВХОД (ЗАГЛУШКА)
 // ============================================================================
 

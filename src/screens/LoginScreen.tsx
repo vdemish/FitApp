@@ -70,6 +70,10 @@ export function LoginScreen() {
         navigation.replace('Main');
     };
 
+    const handleLegalPress = () => {
+        navigation.navigate('LegalDocuments');
+    };
+
     const isValid = mode === 'signIn'
         ? email.length > 0 && password.length >= 6
         : email.length > 0 && password.length >= 6 && fullName.length > 0;
@@ -227,7 +231,14 @@ export function LoginScreen() {
 
                         {/* Подвал */}
                         <UIText variant="caption" muted style={styles.footer}>
-                            Продолжая, вы соглашаетесь с условиями использования
+                            Продолжая, вы соглашаетесь с{' '}
+                            <Text style={styles.footerLink} onPress={handleLegalPress}>
+                                условиями использования
+                            </Text>
+                            {' '}и{' '}
+                            <Text style={styles.footerLink} onPress={handleLegalPress}>
+                                политикой конфиденциальности
+                            </Text>
                         </UIText>
                     </ScrollView>
                 </KeyboardAvoidingView>
@@ -369,5 +380,9 @@ const styles = StyleSheet.create({
     },
     footer: {
         textAlign: 'center',
+    },
+    footerLink: {
+        color: colors.primary.DEFAULT,
+        fontWeight: typography.fontWeight.bold,
     },
 });

@@ -73,6 +73,10 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
 
     // Обработчик сброса пароля
     const handleResetPassword = async () => {
+        if (!user?.email) {
+            Alert.alert('Ошибка', 'Email пользователя не найден');
+            return;
+        }
         Alert.alert(
             'Сброс пароля',
             `Ссылка для сброса пароля будет отправлена на ${user?.email}`,
@@ -82,7 +86,7 @@ export function AppSettingsModal({ visible, onClose }: AppSettingsModalProps) {
                     text: 'Отправить',
                     onPress: async () => {
                         try {
-                            await resetPassword();
+                            await resetPassword(user.email);
                             Alert.alert('Успешно', 'Письмо для сброса пароля отправлено');
                         } catch (error) {
                             Alert.alert('Ошибка', 'Не удалось отправить письмо');

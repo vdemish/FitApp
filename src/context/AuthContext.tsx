@@ -172,6 +172,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
+    const updateEmail = useCallback(async (newEmail: string) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            await authService.updateEmail(newEmail);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Ошибка обновления email';
+            setState(prev => ({ ...prev, loading: false, error: message }));
+            throw error;
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
+        }
+    }, []);
+
+    const resetPassword = useCallback(async (email: string) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            await authService.resetPassword(email);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Ошибка сброса пароля';
+            setState(prev => ({ ...prev, loading: false, error: message }));
+            throw error;
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
+        }
+    }, []);
+
+    const updatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            await authService.updatePassword(currentPassword, newPassword);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Ошибка обновления пароля';
+            setState(prev => ({ ...prev, loading: false, error: message }));
+            throw error;
+        } finally {
+            setState(prev => ({ ...prev, loading: false }));
+        }
+    }, []);
+
+    const deleteAccount = useCallback(async () => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            await authService.deleteAccount();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Ошибка удаления аккаунта';
+            setState(prev => ({ ...prev, loading: false, error: message }));
+            throw error;
+        }
+    }, []);
+
     const clearError = useCallback(() => {
         setState(prev => ({ ...prev, error: null }));
     }, []);
@@ -182,8 +236,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signUp,
         signOut,
         signInWithOAuth,
+        updateEmail,
+        resetPassword,
+        updatePassword,
+        deleteAccount,
         clearError,
-    }), [state, signIn, signUp, signOut, signInWithOAuth, clearError]);
+    }), [state, signIn, signUp, signOut, signInWithOAuth, updateEmail, resetPassword, updatePassword, deleteAccount, clearError]);
 
     return (
         <AuthContext.Provider value={value}>

@@ -6,6 +6,8 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Platform, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useUserStats, useThemeColors } from '@/hooks';
@@ -13,8 +15,10 @@ import { triggerSelection } from '@/utils/haptics';
 import { GlassCard, Button, Heading, Label } from '@/components/ui';
 import { Text as UIText } from '@/components/ui/Text';
 import { colors, typography, spacing, radius } from '@/theme';
+import type { RootStackParamList } from '@/navigation/RootNavigator';
 
 export function ProfileScreen() {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { user, profile, signOut } = useAuth();
     const { stats, loading, refetch } = useUserStats();
     const { activeTheme, setTheme, restTimerSounds, toggleRestTimerSounds } = useSettings();
@@ -166,7 +170,7 @@ export function ProfileScreen() {
                         <SettingsRow
                             icon="👤"
                             label="Personal Information"
-                            onPress={() => console.log('Personal Info')}
+                            onPress={() => navigation.navigate('AccountSettings')}
                         />
                         <View style={[styles.settingsDivider, dynamicStyles.settingsDivider]} />
                         <SettingsRow
